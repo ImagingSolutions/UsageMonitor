@@ -7,9 +7,9 @@ namespace UsageMonitor.Core.Services;
 
 public interface IUsageMonitorService
 {
-
     Task LogRequestAsync(RequestLog log);
     Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetLogsAsync(DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 20);
+    Task<IEnumerable<RequestLog>> GetRequestLogsAsync(string apiKey, DateTime from, DateTime to);
     Task<IEnumerable<RequestLog>> GetErrorLogsAsync(DateTime? from = null, DateTime? to = null);
     Task<ApiClient?> GetApiClientByKeyAsync(string apiKey);
 
@@ -143,7 +143,12 @@ public class UsageMonitorService : IUsageMonitorService
         var client = await _context.ApiClients.FindAsync(clientId);
         if (client == null) return false;
 
-        client.UsageLimit += newLimit; // Add to existing limit
+        var usedRequests = await _context.RequestLogs
+            .CountAsync(x => x.ApiClientId == clientId);
+        
+        var remainingRequests = Math.Max(0, client.UsageLimit - usedRequests);
+        client.UsageLimit = remainingRequests + newLimit;
+        
         await _context.SaveChangesAsync();
         return true;
     }
@@ -183,4 +188,11 @@ public class UsageMonitorService : IUsageMonitorService
         return stats;
     }
 
+    public async Task<IEnumerable<RequestLog>> GetRequestLogsAsync(string apiKey, DateTime from, DateTime to)
+    {
+        return await _context.RequestLogs
+            .Where(x => x.ApiKey == apiKey && x.RequestTime >= from && x.RequestTime <= to)
+            .OrderByDescending(x => x.RequestTime)
+            .ToListAsync();
+    }
 }   

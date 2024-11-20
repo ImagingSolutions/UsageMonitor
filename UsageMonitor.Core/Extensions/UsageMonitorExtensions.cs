@@ -118,10 +118,19 @@ public static class UsageMonitorExtensions
 
         group.MapGet("/analytics/errors", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
-            var stats = await service.GetErrorRatesAsync();
-            return Results.Ok(stats);
+            var stats = await service.GetErrorRatesAsync();            return Results.Ok(stats);
         }).ExcludeFromDescription();
 
+        group.MapGet("/clients/{apiKey}/report", async (
+            IReportGenerationService reportService,
+            string apiKey) =>
+        {
+            var pdfBytes = await reportService.GenerateClientUsageReportAsync(apiKey);
+            return Results.File(
+                pdfBytes,
+                "application/pdf",
+                $"usage-report-{DateTime.Now:yyyyMMdd}.pdf");
+        }).ExcludeFromDescription();
 
         return endpoints;
     }

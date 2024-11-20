@@ -9,13 +9,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
+
 builder.Services.AddUsageMonitor(options =>
 {
     options.ConnectionString = "Data Source=requests.db";
@@ -32,14 +26,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseDefaultFiles();
 app.UseAuthorization();
-app.UseSession();
 
 app.MapControllers();
-app.UseUsageMonitor();
 
+//usage endpoints;
+app.UseUsageMonitor();
 app.MapUsageMonitorEndpoints();
 app.MapUsageMonitorPages();
 

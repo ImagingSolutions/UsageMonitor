@@ -11,6 +11,8 @@ public static class AppBuilderExtensions
 
     public static IApplicationBuilder UseUsageMonitor(this IApplicationBuilder app)
     {
+        app.UseDefaultFiles();
+        app.UseSession();
         app.UseStaticFiles();
         var options = app.ApplicationServices.GetRequiredService<UsageMonitorOptions>();
 

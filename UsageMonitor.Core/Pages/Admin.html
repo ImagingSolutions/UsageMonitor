@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/core.css">
     <link rel="stylesheet" href="css/theme.css">
 </head>
+
 <body>
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -110,11 +112,11 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">API Key</label>
-                                <input type="text" class="form-control" name="apiKey" required >
+                                <input type="text" class="form-control" name="apiKey" required>
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer gap-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" id="saveNewClient">Create</button>
                     </div>
@@ -143,9 +145,51 @@
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer gap-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" id="saveClientEdit">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Filter Modal -->
+        <div class="modal fade" id="reportFilterModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Download Usage Report</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="reportFilterForm">
+                            <input type="hidden" name="apiKey" id="reportApiKey">
+                            <input type="hidden" name="clientCreatedAt" id="clientCreatedAt">
+
+                            <div class="mb-3">
+                                <label class="form-label">Time Range</label>
+                                <select class="form-select" id="timeRangeSelect">
+                                    <option value="thisMonth">This Month</option>
+                                    <option value="allTime">All Time</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+
+                            <div id="customDateRange" style="display: none;">
+                                <div class="mb-3">
+                                    <label class="form-label">From</label>
+                                    <input type="datetime-local" class="form-control" id="startDate">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">To</label>
+                                    <input type="datetime-local" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer gap-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="downloadReport()">Download</button>
                     </div>
                 </div>
             </div>
@@ -168,7 +212,7 @@
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer gap-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" id="saveNewLimit">Save</button>
                     </div>
@@ -180,6 +224,61 @@
     <script src="js/bootstrap.js"></script>
     <script src="js/chart.js"></script>
     <script>
+        function showReportModal(apiKey, createdAt) {
+            document.getElementById('reportApiKey').value = apiKey;
+            document.getElementById('clientCreatedAt').value = createdAt;
+            document.getElementById('timeRangeSelect').value = 'thisMonth';
+            document.getElementById('customDateRange').style.display = 'none';
+            new bootstrap.Modal(document.getElementById('reportFilterModal')).show();
+        }
+
+        document.getElementById('timeRangeSelect').addEventListener('change', function () {
+            const customRange = document.getElementById('customDateRange');
+            if (this.value === 'custom') {
+                customRange.style.display = 'block';
+                // Set min date to client creation date
+                const createdAt = new Date(document.getElementById('clientCreatedAt').value);
+                document.getElementById('startDate').min = createdAt.toISOString().slice(0, 16);
+                document.getElementById('startDate').value = createdAt.toISOString().slice(0, 16);
+                document.getElementById('endDate').value = new Date().toISOString().slice(0, 16);
+            } else {
+                customRange.style.display = 'none';
+            }
+        });
+
+        async function downloadReport() {
+            const apiKey = document.getElementById('reportApiKey').value;
+            const timeRange = document.getElementById('timeRangeSelect').value;
+            let startDate, endDate;
+
+            if (timeRange === 'thisMonth') {
+                startDate = new Date();
+                startDate.setDate(1);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date();
+            } else if (timeRange === 'allTime') {
+                startDate = new Date(document.getElementById('clientCreatedAt').value);
+                endDate = new Date();
+            } else {
+                startDate = new Date(document.getElementById('startDate').value);
+                endDate = new Date(document.getElementById('endDate').value);
+            }
+
+            if (startDate > endDate) {
+                alert('Start date must be before end date');
+                return;
+            }
+
+            const createdAt = new Date(document.getElementById('clientCreatedAt').value);
+            if (startDate < createdAt) {
+                alert('Start date cannot be before client creation date');
+                return;
+            }
+
+            window.location.href = `/api/usage-monitor/clients/${apiKey}/report?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+            bootstrap.Modal.getInstance(document.getElementById('reportFilterModal')).hide();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
             setupEventListeners();
@@ -207,6 +306,9 @@
                             </button>
                             <button class="btn btn-sm btn-success add-limit" data-client-id="${client.id}">
                                 Add Requests
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="showReportModal('${client.apiKey}', '${client.createdAt}')">
+                                Download Report
                             </button>
                         </td>
                     `;
@@ -246,7 +348,7 @@
                     name: formData.get('name'),
                     email: formData.get('email'),
                     usageLimit: parseInt(formData.get('usageLimit')),
-                    apiKey:formData.get('apiKey')
+                    apiKey: formData.get('apiKey')
                 };
 
                 try {
@@ -267,8 +369,12 @@
             });
 
             // Edit Limit
-            // Edit Client
+            // Handle button clicks
             document.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('download-report')) {
+                    const apiKey = e.target.dataset.apiKey;
+                    window.location.href = `/api/usage-monitor/clients/${apiKey}/report`;
+                }
                 if (e.target.classList.contains('edit-client')) {
                     const { clientId, name, email } = e.target.dataset;
                     const form = document.getElementById('editClientForm');
@@ -337,7 +443,7 @@
                 container.style.display = 'none';
             });
             document.getElementById(`${viewName}-view`).style.display = 'block';
-            
+
             if (viewName === 'analytics') {
                 loadAnalytics();
             }
@@ -362,10 +468,10 @@
                 new Chart(usageCtx, {
                     type: 'line',
                     data: {
-                        labels: Array.from({length: new Date().getDate()}, (_, i) => i + 1),
+                        labels: Array.from({ length: new Date().getDate() }, (_, i) => i + 1),
                         datasets: [{
                             label: 'API Requests',
-                            data: Array.from({length: new Date().getDate()}, (_, i) => usageStats[(i + 1).toString()] || 0),
+                            data: Array.from({ length: new Date().getDate() }, (_, i) => usageStats[(i + 1).toString()] || 0),
                             borderColor: '#696cff',
                             tension: 0.4
                         }]
@@ -412,4 +518,5 @@
         }
     </script>
 </body>
-</html>
+
+</html>

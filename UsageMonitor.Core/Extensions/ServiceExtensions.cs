@@ -31,10 +31,21 @@ public static class ServiceExtensions
                 throw new ArgumentException("Unsupported database provider");
         }
 
+        services.AddDistributedMemoryCache();
+        services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromMinutes(30);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        });
+
+
         services.AddTransient<IDatabaseInitializer, DatabaseInitializer>();
         services.AddScoped<IUsageMonitorService, UsageMonitorService>();
+        services.AddScoped<IReportGenerationService, ReportGenerationService>();
 
         services.AddDirectoryBrowser();
+    
 
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
