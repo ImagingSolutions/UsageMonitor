@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,36 +26,36 @@ public static class UsageMonitorExtensions
         {
             (IEnumerable<RequestLog> logs, int totalCount) = await service.GetLogsAsync(from, to, page, pageSize);
             return Results.Ok(new { logs, totalCount, currentPage = page });
-        });
+        }).ExcludeFromDescription();
 
-        group.MapGet("/logs/errors", async (
+        group.MapGet("/logs/errors", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             DateTime? from,
             DateTime? to) =>
         {
             return await service.GetErrorLogsAsync(from, to);
-        });
+        }).ExcludeFromDescription();
 
         // API Client endpoints
-        group.MapGet("/clients", async (IUsageMonitorService service) =>
+        group.MapGet("/clients", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
             return await service.GetApiClientsAsync();
-        });
+        }).ExcludeFromDescription();
 
-        group.MapPost("/clients", async (
+        group.MapPost("/clients", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             ApiClient client) =>
         {
             return await service.CreateApiClientAsync(client);
-        });
+        }).ExcludeFromDescription();
 
         // Admin Authentication endpoints
-        group.MapGet("/admin/exists", async (IUsageMonitorService service) =>
+        group.MapGet("/admin/exists", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
             return await service.HasAdminAccountAsync();
-        });
+        }).ExcludeFromDescription();
 
-        group.MapPost("/admin/setup", async (
+        group.MapPost("/admin/setup", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             AdminSetupRequest request) =>
         {
@@ -62,9 +63,9 @@ public static class UsageMonitorExtensions
             if (!success)
                 return Results.BadRequest(new { error = "Admin account already exists" });
             return Results.Ok();
-        });
+        }).ExcludeFromDescription();
 
-        group.MapPost("/admin/login", async (
+        group.MapPost("/admin/login", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             AdminLoginRequest request,
             HttpContext context) =>
@@ -75,7 +76,7 @@ public static class UsageMonitorExtensions
 
             context.Session.SetString("AdminAuthenticated", "true");
             return Results.Ok();
-        });
+        }).ExcludeFromDescription();
 
         // Client management endpoints
         group.MapGet("/clients/{apiKey}/usage", async (
@@ -84,9 +85,9 @@ public static class UsageMonitorExtensions
         {
             var count = await service.GetTotalRequestCountAsync(apiKey);
             return Results.Ok(new { count });
-        });
+        }).ExcludeFromDescription();
 
-        group.MapPut("/clients/{id}/limit", async (
+        group.MapPut("/clients/{id}/limit", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             int id,
             UpdateLimitRequest request) =>
@@ -95,9 +96,9 @@ public static class UsageMonitorExtensions
             if (!success)
                 return Results.NotFound();
             return Results.Ok();
-        });
+        }).ExcludeFromDescription();
 
-        group.MapPut("/clients/{id}", async (
+        group.MapPut("/clients/{id}", [ApiExplorerSettings(IgnoreApi = true)] async (
             IUsageMonitorService service,
             int id,
             ApiClient client) =>
@@ -106,22 +107,21 @@ public static class UsageMonitorExtensions
             if (!success)
                 return Results.NotFound();
             return Results.Ok();
-        });
+        }).ExcludeFromDescription();
 
-        // Analytics endpoints
-        group.MapGet("/analytics/usage", async (IUsageMonitorService service) =>
+
+        group.MapGet("/analytics/usage", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
             var stats = await service.GetMonthlyUsageStatsAsync();
             return Results.Ok(stats);
-        });
+        }).ExcludeFromDescription();
 
-        group.MapGet("/analytics/errors", async (IUsageMonitorService service) =>
+        group.MapGet("/analytics/errors", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
             var stats = await service.GetErrorRatesAsync();
             return Results.Ok(stats);
-        });
+        }).ExcludeFromDescription();
 
-        // API endpoints continue here...
 
         return endpoints;
     }
