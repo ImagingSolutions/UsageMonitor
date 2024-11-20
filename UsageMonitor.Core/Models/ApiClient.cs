@@ -11,6 +11,6 @@ public class ApiClient
     public string Email { get; set; }
     public DateTime CreatedAt { get; set; }
     public int UsageLimit { get; set; }
-    public List<RequestLog>? Requests { get; set; }
+    public List<RequestLog> RequestLogs { get; set; } = new();
 
 }

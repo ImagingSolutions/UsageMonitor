@@ -102,6 +102,43 @@ public class DatabaseInitializer : IDatabaseInitializer
                         ""CreatedAt"" TIMESTAMP NOT NULL
                     );";
 
+            case DatabaseProvider.SQLServer:
+                return @"
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ApiClients')
+                    BEGIN
+                        CREATE TABLE ApiClients (
+                            Id INT IDENTITY(1,1) PRIMARY KEY,
+                            ApiKey NVARCHAR(MAX) NOT NULL,
+                            Name NVARCHAR(MAX) NOT NULL,
+                            Email NVARCHAR(MAX),
+                            CreatedAt DATETIME NOT NULL,
+                            UsageLimit INT NOT NULL
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RequestLogs')
+                    BEGIN
+                        CREATE TABLE RequestLogs (
+                            Id INT IDENTITY(1,1) PRIMARY KEY,
+                            ApiKey NVARCHAR(MAX) NOT NULL,
+                            StatusCode INT NOT NULL,
+                            RequestTime DATETIME NOT NULL,
+                            ResponseTime DATETIME NOT NULL,
+                            ApiClientId INT NOT NULL,
+                            FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id)
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Admins')
+                    BEGIN
+                        CREATE TABLE Admins (
+                            Id INT IDENTITY(1,1) PRIMARY KEY,
+                            Username NVARCHAR(450) NOT NULL UNIQUE,
+                            PasswordHash NVARCHAR(MAX) NOT NULL,
+                            CreatedAt DATETIME NOT NULL
+                        );
+                    END";
+
             default:
                 throw new ArgumentException("Unsupported database provider");
         }

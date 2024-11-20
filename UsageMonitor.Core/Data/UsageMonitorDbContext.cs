@@ -23,7 +23,7 @@ public class UsageMonitorDbContext : DbContext
            entity.HasKey(e => e.Id);
            entity.Property(e => e.RequestTime).IsRequired();
            entity.HasOne(e => e.ApiClient)
-                 .WithMany()
+                 .WithMany(a => a.RequestLogs)
                  .HasForeignKey(e => e.ApiClientId)
                  .IsRequired();
        });

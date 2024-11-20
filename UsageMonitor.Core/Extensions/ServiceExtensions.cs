@@ -10,7 +10,11 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddUsageMonitor(this IServiceCollection services, Action<UsageMonitorOptions> configOptions)
     {
-        var options = new UsageMonitorOptions();
+        var options = new UsageMonitorOptions
+        {
+            DatabaseProvider = DatabaseProvider.SQLite,
+            ConnectionString = "Data Source=usagemonitor.db"
+        };
         configOptions(options);
 
         services.AddSingleton(options);
@@ -25,6 +29,11 @@ public static class ServiceExtensions
             case DatabaseProvider.PostgreSQL:
                 services.AddDbContext<UsageMonitorDbContext>((serviceProvider, opt) =>
                     opt.UseNpgsql(options.ConnectionString));
+                break;
+
+            case DatabaseProvider.SQLServer:
+                services.AddDbContext<UsageMonitorDbContext>((serviceProvider, opt) =>
+                    opt.UseSqlServer(options.ConnectionString));
                 break;
 
             default:

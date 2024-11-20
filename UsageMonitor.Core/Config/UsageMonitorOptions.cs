@@ -10,5 +10,6 @@ public class UsageMonitorOptions
 public enum DatabaseProvider
 {
     SQLite,
-    PostgreSQL
+    PostgreSQL,
+    SQLServer
 }
