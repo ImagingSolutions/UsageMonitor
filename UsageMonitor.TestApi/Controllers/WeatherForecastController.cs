@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UsageMonitor.Core.Models;
 
 namespace UsageMonitor.TestApi.Controllers
 {
@@ -19,6 +20,7 @@ namespace UsageMonitor.TestApi.Controllers
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
+        [MonitorUsage]
         public IEnumerable<WeatherForecast> Get()
         {
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Monitor - Login</title>
+    <link rel="stylesheet" href="css/core.css">
+    <link rel="stylesheet" href="css/theme.css">
+</head>
+<body class="bg-light">
+    <div class="container h-100">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h3 class="card-title text-center mb-4">Usage Monitor</h3>
+                        <div id="setup-form" style="display: none;">
+                            <h5 class="text-center mb-3">Initial Setup</h5>
+                            <form id="admin-setup-form">
+                                <div class="mb-3">
+                                    <label for="setup-username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="setup-username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="setup-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="setup-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="setup-confirm-password" class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" id="setup-confirm-password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Setup Account</button>
+                            </form>
+                        </div>
+                        <div id="login-form">
+                            <form id="admin-login-form">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Login</button>
+                            </form>
+                        </div>
+                        <div id="error-message" class="alert alert-danger mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/bootstrap.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const setupForm = document.getElementById('setup-form');
+            const loginForm = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+
+            // Check if admin account exists
+            const response = await fetch('/api/usage-monitor/admin/exists');
+            const hasAdmin = await response.json();
+
+            setupForm.style.display = hasAdmin ? 'none' : 'block';
+            loginForm.style.display = hasAdmin ? 'block' : 'none';
+
+            // Setup form handler
+            document.getElementById('admin-setup-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('setup-username').value;
+                const password = document.getElementById('setup-password').value;
+                const confirmPassword = document.getElementById('setup-confirm-password').value;
+
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/usage-monitor/admin/setup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/admin';
+                    } else {
+                        showError('Failed to setup admin account');
+                    }
+                } catch (error) {
+                    showError('An error occurred');
+                }
+            });
+
+            // Login form handler
+            document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const response = await fetch('/api/usage-monitor/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/admin';
+                    } else {
+                        showError('Invalid username or password');
+                    }
+                } catch (error) {
+                    showError('An error occurred');
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
