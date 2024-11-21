@@ -54,7 +54,8 @@ public class DatabaseInitializer : IDatabaseInitializer
                         Email TEXT,
                         CreatedAt DATETIME NOT NULL,
                         UsageCycle DATETIME NOT NULL,
-                        UsageLimit INTEGER NOT NULL
+                        AmountPaid DECIMAL(18,2) NOT NULL,
+                        UnitPrice DECIMAL(18,2) NOT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS RequestLogs (
@@ -82,7 +83,8 @@ public class DatabaseInitializer : IDatabaseInitializer
                         ""Email"" TEXT,
                         ""CreatedAt"" TIMESTAMP NOT NULL,
                         ""UsageCycle"" TIMESTAMP NOT NULL,
-                        ""UsageLimit"" INTEGER NOT NULL
+                        ""AmountPaid"" DECIMAL(18,2) NOT NULL,
+                        ""UnitPrice"" DECIMAL(18,2) NOT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS ""RequestLogs"" (
@@ -112,7 +114,8 @@ public class DatabaseInitializer : IDatabaseInitializer
                             Email NVARCHAR(MAX),
                             CreatedAt DATETIME NOT NULL,
                             UsageCycle DATETIME NOT NULL,
-                            UsageLimit INT NOT NULL
+                            AmountPaid DECIMAL(18,2) NOT NULL,
+                            UnitPrice DECIMAL(18,2) NOT NULL
                         );
                     END
 

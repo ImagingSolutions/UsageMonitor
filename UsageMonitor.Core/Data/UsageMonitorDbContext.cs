@@ -34,7 +34,8 @@ public class UsageMonitorDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired();
-            entity.Property(e => e.UsageLimit).IsRequired();
+            entity.Property(e => e.AmountPaid).IsRequired();
+            entity.Property(e => e.UnitPrice).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
         });
 

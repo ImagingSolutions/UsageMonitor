@@ -91,11 +91,11 @@ public static class UsageMonitorExtensions
         }).ExcludeFromDescription();
 
 
-        group.MapPatch("/client/limit", async (
+        group.MapPatch("/client/payment", async (
             IUsageMonitorService service,
-            UpdateLimitRequest request) =>
+            UpdatePaymentRequest request) =>
         {
-            var success = await service.AddClientRequestsAsync(request.UsageLimit);
+            var success = await service.AddClientPaymentAsync(request.AdditionalAmount);
             if (!success)
                 return Results.NotFound();
             return Results.Ok();

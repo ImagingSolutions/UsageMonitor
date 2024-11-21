@@ -10,8 +10,8 @@
 </head>
 
 <body>
-    <div class="container-fluid">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid w-100">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 w-100">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Usage Monitor</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -88,7 +88,6 @@
             </div>
         </div>
 
-        <!-- Initial Client Setup Modal -->
         <div class="modal fade" id="initialClientModal" data-bs-backdrop="static" data-bs-keyboard="false"
             tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -108,8 +107,29 @@
                                 <input type="email" class="form-control" name="email" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Monthly Request Limit</label>
-                                <input type="number" class="form-control" name="usageLimit" required min="1">
+                                <label class="form-label">Amount Paid</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="amountPaid" required min="1"
+                                        step="1">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Price per Request</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="unitRate" required min="0.01"
+                                        step="0.01">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="txtUsagePreview"
+                                        placeholder="Available Requests">
+                                    <button class="btn btn-outline-success" type="button" id="btnUsagePreview">Calculate
+                                        available requests</button>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -191,20 +211,28 @@
             </div>
         </div>
 
-        <!-- Add Requests Modal -->
+        <!-- Add Payment Modal -->
         <div class="modal fade" id="addRequestsModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Usage Limit</h5>
+                        <h5 class="modal-title">Add Payment</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <form id="editLimitForm">
                             <input type="hidden" name="clientId">
                             <div class="mb-3">
-                                <label class="form-label">Additional Requests</label>
-                                <input type="number" class="form-control" name="newLimit" required min="1">
+                                <label class="form-label">Additional Payment Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="additionalAmount" required
+                                        min="0.01" step="0.01" oninput="updatePaymentPreview()">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Additional Requests Available</label>
+                                <p class="form-text" id="paymentPreview">Enter amount to see additional requests</p>
                             </div>
                         </form>
                     </div>
@@ -220,6 +248,7 @@
     <script src="js/bootstrap.js"></script>
     <script src="js/chart.js"></script>
     <script>
+
         function showReportModal(createdAt) {
             document.getElementById('clientCreatedAt').value = createdAt;
             document.getElementById('timeRangeSelect').value = 'thisMonth';
@@ -302,7 +331,7 @@
             }
         }
 
-         function showEditClientModal() {
+        function showEditClientModal() {
             const form = document.getElementById('editClientForm');
             const client = {
                 name: document.getElementById('client-name').textContent,
@@ -342,13 +371,30 @@
             });
 
             // New Client Form
+            function updateUsagePreview() {
+                const form = document.getElementById('newClientForm');
+                const formData = new FormData(form);
+
+                const amountPaid = parseFloat(formData.get('amountPaid'));
+                const unitPrice = parseFloat(formData.get('unitRate'));
+                const preview = document.getElementById('txtUsagePreview');
+
+                if (amountPaid && unitPrice) {
+                    const requests = Math.floor(amountPaid / unitPrice);
+                    preview.textContent = `${requests.toLocaleString()} requests available`;
+                } else {
+                    preview.textContent = 'Enter amount and price to see available requests';
+                }
+            }
+
             document.getElementById('saveNewClient').addEventListener('click', async () => {
                 const form = document.getElementById('newClientForm');
                 const formData = new FormData(form);
                 const client = {
                     name: formData.get('name'),
                     email: formData.get('email'),
-                    usageLimit: parseInt(formData.get('usageLimit'))
+                    amountPaid: parseFloat(formData.get('amountPaid')),
+                    unitPrice: parseFloat(formData.get('unitRate'))
                 };
 
                 try {
@@ -369,7 +415,7 @@
             });
 
             // Edit Limit
-            // Handle button clicks
+            // Handle button clicks 
             document.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('download-report')) {
                     const apiKey = e.target.dataset.apiKey;
@@ -415,16 +461,28 @@
                 }
             });
 
+            function updatePaymentPreview() {
+                const additionalAmount = parseFloat(document.querySelector('input[name="additionalAmount"]').value) || 0;
+                const preview = document.getElementById('paymentPreview');
+                const unitPrice = parseFloat(document.getElementById('client-unit-price').textContent);
+
+                if (additionalAmount && unitPrice) {
+                    const additionalRequests = Math.floor(additionalAmount / unitPrice);
+                    preview.textContent = `${additionalRequests.toLocaleString()} additional requests`;
+                } else {
+                    preview.textContent = 'Enter amount to see additional requests';
+                }
+            }
+
             document.getElementById('saveNewLimit').addEventListener('click', async () => {
                 const form = document.getElementById('editLimitForm');
-                const clientId = form.querySelector('input[name="clientId"]').value;
-                const newLimit = parseInt(form.querySelector('input[name="newLimit"]').value);
+                const additionalAmount = parseFloat(form.querySelector('input[name="additionalAmount"]').value);
 
                 try {
-                    const response = await fetch(`/api/usgm/client/limit`, {
+                    const response = await fetch(`/api/usgm/client/payment`, {
                         method: 'Patch',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ usageLimit: newLimit })
+                        body: JSON.stringify({ additionalAmount })
                     });
 
                     if (response.ok) {
@@ -436,6 +494,10 @@
                     console.error('Error updating limit:', error);
                 }
             });
+
+            document.getElementById('btnUsagePreview').addEventListener('click', async () => {
+                updateUsagePreview();
+            })
         }
 
         function showView(viewName) {

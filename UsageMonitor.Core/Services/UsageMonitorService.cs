@@ -13,7 +13,7 @@ public interface IUsageMonitorService
     Task<IEnumerable<RequestLog>> GetErrorLogsAsync(DateTime? from = null, DateTime? to = null);
     Task<ApiClient> GetApiClientAsync();
     Task<ApiClient> CreateApiClientAsync(ApiClient client);
-    Task<bool> AddClientRequestsAsync(int requests);
+    Task<bool> AddClientPaymentAsync(decimal additionalAmount);
     Task<bool> ValidateAdminLoginAsync(string username, string password);
     Task<bool> SetupAdminAccountAsync(string username, string password);
     Task<int> GetTotalRequestCountAsync();
@@ -78,7 +78,7 @@ public class UsageMonitorService : IUsageMonitorService
     public async Task<int> GetTotalRequestCountAsync()
     {
         var client = await _context.ApiClients.FirstOrDefaultAsync();
-        return await _context.RequestLogs.Where(rq=>rq.RequestTime>=client.UsageCycle)
+        return await _context.RequestLogs.Where(rq => rq.RequestTime >= client.UsageCycle)
             .CountAsync();
     }
 
@@ -130,17 +130,12 @@ public class UsageMonitorService : IUsageMonitorService
         return await _context.Admins.AnyAsync();
     }
 
-    public async Task<bool> AddClientRequestsAsync(int newLimit)
+    public async Task<bool> AddClientPaymentAsync(decimal additionalAmount)
     {
         var client = await _context.ApiClients.FirstOrDefaultAsync();
         if (client == null) return false;
 
-        var usedRequests = await _context.RequestLogs.Where(rq=>rq.RequestTime>=client.UsageCycle)
-            .CountAsync();
-
-        var remainingRequests = Math.Max(0, client.UsageLimit - usedRequests);
-        client.UsageLimit = remainingRequests + newLimit;
-        
+        client.AmountPaid += additionalAmount;
         client.UsageCycle = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
