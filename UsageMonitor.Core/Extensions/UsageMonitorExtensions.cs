@@ -36,9 +36,9 @@ public static class UsageMonitorExtensions
 
         group.MapPost("/client", async (
             IUsageMonitorService service,
-            ApiClient client) =>
+            ApiClient clientData) =>
         {
-            return await service.CreateApiClientAsync(client);
+            return await service.CreateApiClientAsync(clientData);
 
         }).ExcludeFromDescription();
 

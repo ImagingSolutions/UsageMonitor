@@ -20,13 +20,12 @@
                         <div class="card-body">
                             <h5 class="card-title">Usage</h5>
                             <div class="progress mb-3">
-                                <div id="usageProgress" class="progress-bar" role="progressbar"></div>
+                                <div id="usageProgress" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
                             </div>
                             <p id="usageText" class="mb-0"></p>
                         </div>
                     </div>
                 </div>
-                Current Usage
             </div>
 
             <!-- Recent Requests -->
@@ -128,7 +127,7 @@
 
             progress.style.width = `${Math.min(percentage, 100)}%`;
             progress.classList.toggle('bg-danger', percentage > 90);
-            usageText.textContent = `${usage.count} requests this month`;
+            usageText.textContent = `${usage.count} / ${usage.limit} requests this month`;
         }
 
         function updateRecentRequests(logs) {
@@ -140,7 +139,7 @@
                 row.innerHTML = `
                     <td>${new Date(log.requestTime).toLocaleString()}</td>
                     <td>
-                        <span class="badge ${log.statusCode < 400 ? 'bg-success' : 'bg-danger'}">
+                        <span class="badge ${log.statusCode < 400 ? 'bg-label-success' : 'bg-label-danger'}">
                             ${log.statusCode}
                         </span>
                     </td>
