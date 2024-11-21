@@ -55,9 +55,6 @@ public static class ServiceExtensions
         services.AddScoped<IReportGenerationService, ReportGenerationService>();
 
         services.AddDirectoryBrowser();
-        services.AddServerSideBlazor();
-        services.AddRazorComponents();
-    
 
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();

@@ -2,11 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using UsageMonitor.Core.Config;
-using UsageMonitor.Core.Data;
-using UsageMonitor.Core.Models;
 using UsageMonitor.Core.Services;
+using UsageMonitor.Core.Models;
 
 namespace UsageMonitor.Core.Extensions;
 
@@ -81,7 +78,7 @@ public static class UsageMonitorExtensions
            IUsageMonitorService service) =>
        {
            var client = await service.GetApiClientAsync();
-            if(client == null) return Results.NotFound();
+           if (client == null) return Results.NotFound();
            return Results.Ok(client);
        }).ExcludeFromDescription();
 
@@ -192,10 +189,6 @@ public static class UsageMonitorExtensions
             context.Response.ContentType = "application/javascript";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
-
-        endpoints.MapBlazorHub();
-
-
 
         return endpoints;
     }
