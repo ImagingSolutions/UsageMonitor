@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/core.css">
     <link rel="stylesheet" href="css/theme.css">
 </head>
+
 <body class="bg-light">
     <div class="container h-100">
         <div class="row justify-content-center align-items-center min-vh-100">
@@ -59,7 +61,7 @@
             const errorMessage = document.getElementById('error-message');
 
             // Check if admin account exists
-            const response = await fetch('/api/usage-monitor/admin/exists');
+            const response = await fetch('/api/usgm/admin/exists');
             const hasAdmin = await response.json();
 
             setupForm.style.display = hasAdmin ? 'none' : 'block';
@@ -78,7 +80,7 @@
                 }
 
                 try {
-                    const response = await fetch('/api/usage-monitor/admin/setup', {
+                    const response = await fetch('/api/usgm/admin/setup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
@@ -101,7 +103,7 @@
                 const password = document.getElementById('password').value;
 
                 try {
-                    const response = await fetch('/api/usage-monitor/admin/login', {
+                    const response = await fetch('/api/usgm/admin/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
@@ -124,4 +126,5 @@
         });
     </script>
 </body>
+
 </html>

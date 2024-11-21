@@ -4,7 +4,6 @@ UsageMonitor is a .NET library that provides API usage monitoring, rate limiting
 
 ## Features
 
-- 🔒 API Key Authentication
 - ⚡ Rate Limiting per API Client
 - 📊 Usage Analytics Dashboard
 - 📈 Request Logging
@@ -71,14 +70,6 @@ options.DatabaseProvider = DatabaseProvider.SQLServer;
 options.ConnectionString = "Server=localhost;Database=usagemonitor;Trusted_Connection=True;TrustServerCertificate=True";
 ```
 
-### API Key Header
-
-By default, the library expects API keys in the `X-API-Key` header. You can customize this:
-
-```csharp
-options.ApiKeyHeader = "Custom-API-Key";
-```
-
 ## Features
 
 ### Rate Limiting
@@ -105,9 +96,7 @@ options.ApiKeyHeader = "Custom-API-Key";
 
 ## Security
 
-- API key authentication required for all monitored endpoints
 - Secure admin interface with username/password authentication
-- Rate limiting prevents API abuse
 
 ## Example Implementation
 

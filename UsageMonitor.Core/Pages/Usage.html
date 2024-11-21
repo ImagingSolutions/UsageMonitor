@@ -10,35 +10,16 @@
 </head>
 
 <body class="bg-light">
-    <!-- API Key Modal -->
-    <div class="modal fade" id="apiKeyModal" data-bs-backdrop="static" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Enter API Key</h5>
-                </div>
-                <div class="modal-body">
-                    <form id="apiKeyForm">
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="apiKey" placeholder="Enter your API key"
-                                required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="container py-4">
         <!-- Usage Stats -->
         <div id="statsContainer">
             <div class="row">
-                <!-- Monthly Usage -->
-                <div class="col-md-6 mb-4">
+                <!--Usage -->
+                <div class="mb-4">
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title">Monthly Usage</h5>
+                            <h5 class="card-title">Usage</h5>
                             <div class="progress mb-3">
                                 <div id="usageProgress" class="progress-bar" role="progressbar"></div>
                             </div>
@@ -46,17 +27,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Error Rate -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Error Rate</h5>
-                            <div id="errorRate" class="display-4 text-center"></div>
-                            <p id="errorText" class="text-center text-muted"></p>
-                        </div>
-                    </div>
-                </div>
+                Current Usage
             </div>
 
             <!-- Recent Requests -->
@@ -91,13 +62,6 @@
 
     <script src="js/bootstrap.js"></script>
     <script>
-        let currentApiKey = '';
-
-        // Show modal on page load
-        window.addEventListener('load', () => {
-            const modal = new bootstrap.Modal(document.getElementById('apiKeyModal'));
-            modal.show();
-        });
 
         function updatePagination(totalCount, currentPage) {
             const pagination = document.getElementById('pagination');
@@ -136,48 +100,27 @@
             });
         }
 
-        // Handle API key submission
-        document.getElementById('apiKeyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            currentApiKey = document.getElementById('apiKey').value;
-            const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal'));
-            modal.hide();
-            await loadStats();
-        });
-
         let currentPage = 1;
 
         async function loadStats(page = 1) {
             try {
-                if (!currentApiKey) return;
-                // Load client info and usage
-                const usageResponse = await fetch(`/api/usage-monitor/clients/${currentApiKey}/usage`);
+                console.log(page);
+                const usageResponse = await fetch(`/api/usgm/client/usage`);
                 const usage = await usageResponse.json();
 
-                // Get recent logs
-                const logsResponse = await fetch(`/api/usage-monitor/logs?page=${page}`, {
-                    headers: {
-                        'X-API-Key': currentApiKey
-                    }
-                });
+                const logsResponse = await fetch(`/api/usgm/logs?page=${page}`);
                 const logsData = await logsResponse.json();
 
-                // Update UI
                 updateUsageStats(usage);
                 updateRecentRequests(logsData.logs);
                 updatePagination(logsData.totalCount, page);
                 document.getElementById('statsContainer').style.display = 'block';
+
             } catch (error) {
                 console.error('Error loading stats:', error);
                 alert('Failed to load stats. Please check your API key.');
             }
         }
-
-        // Load stats on page load
-        window.addEventListener('load', loadStats);
-
-        // Refresh stats every minute
-        setInterval(loadStats, 60000);
 
         function updateUsageStats(usage) {
             const percentage = (usage.count / usage.limit) * 100;
@@ -202,11 +145,16 @@
                             ${log.statusCode}
                         </span>
                     </td>
-                    <td>${log.timeSpent}</td>
+                    <td>${log.duration}</td>
                 `;
                 tbody.appendChild(row);
             });
         }
+
+        window.addEventListener('DOMContentLoaded', ()=>loadStats(1));
+
+        setInterval(loadStats, 6000);
+
     </script>
 </body>
 

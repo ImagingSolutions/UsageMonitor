@@ -39,7 +39,7 @@ public class DatabaseInitializer : IDatabaseInitializer
         {
             System.Diagnostics.Debug.WriteLine($"Migration error: {ex.Message}");
         }
-        
+
     }
 
     private static string GetInitialMigrationScript(DatabaseProvider provider)
@@ -50,19 +50,19 @@ public class DatabaseInitializer : IDatabaseInitializer
                 return @"
                     CREATE TABLE IF NOT EXISTS ApiClients (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ApiKey TEXT NOT NULL,
                         Name TEXT NOT NULL,
                         Email TEXT,
                         CreatedAt DATETIME NOT NULL,
+                        UsageCycle DATETIME NOT NULL,
                         UsageLimit INTEGER NOT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS RequestLogs (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ApiKey TEXT NOT NULL,
                         StatusCode INTEGER NOT NULL,
+                        Path TEXT NOT NULL,
                         RequestTime DATETIME NOT NULL,
-                        ResponseTime DATETIME NOT NULL,
+                        Duration REAL NOT NULL,
                         ApiClientId INTEGER NOT NULL,
                         FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id)
                     );
@@ -78,19 +78,19 @@ public class DatabaseInitializer : IDatabaseInitializer
                 return @"
                     CREATE TABLE IF NOT EXISTS ""ApiClients"" (
                         ""Id"" SERIAL PRIMARY KEY,
-                        ""ApiKey"" TEXT NOT NULL,
                         ""Name"" TEXT NOT NULL,
                         ""Email"" TEXT,
                         ""CreatedAt"" TIMESTAMP NOT NULL,
+                        ""UsageCycle"" TIMESTAMP NOT NULL,
                         ""UsageLimit"" INTEGER NOT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS ""RequestLogs"" (
                         ""Id"" SERIAL PRIMARY KEY,
-                        ""ApiKey"" TEXT NOT NULL,
                         ""StatusCode"" INTEGER NOT NULL,
+                        ""Path"" TEXT NOT NULL,
                         ""RequestTime"" TIMESTAMP NOT NULL,
-                        ""ResponseTime"" TIMESTAMP NOT NULL,
+                        ""Duration"" DOUBLE PRECISION NOT NULL,
                         ""ApiClientId"" INTEGER NOT NULL,
                         FOREIGN KEY (""ApiClientId"") REFERENCES ""ApiClients""(""Id"")
                     );
@@ -108,10 +108,10 @@ public class DatabaseInitializer : IDatabaseInitializer
                     BEGIN
                         CREATE TABLE ApiClients (
                             Id INT IDENTITY(1,1) PRIMARY KEY,
-                            ApiKey NVARCHAR(MAX) NOT NULL,
                             Name NVARCHAR(MAX) NOT NULL,
                             Email NVARCHAR(MAX),
                             CreatedAt DATETIME NOT NULL,
+                            UsageCycle DATETIME NOT NULL,
                             UsageLimit INT NOT NULL
                         );
                     END
@@ -120,10 +120,10 @@ public class DatabaseInitializer : IDatabaseInitializer
                     BEGIN
                         CREATE TABLE RequestLogs (
                             Id INT IDENTITY(1,1) PRIMARY KEY,
-                            ApiKey NVARCHAR(MAX) NOT NULL,
                             StatusCode INT NOT NULL,
+                            Path NVARCHAR(MAX) NOT NULL,
                             RequestTime DATETIME NOT NULL,
-                            ResponseTime DATETIME NOT NULL,
+                            Duration FLOAT NOT NULL,
                             ApiClientId INT NOT NULL,
                             FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id)
                         );

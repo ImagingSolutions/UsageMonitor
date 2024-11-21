@@ -14,9 +14,8 @@ public static class UsageMonitorExtensions
 {
     public static IEndpointRouteBuilder MapUsageMonitorEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/usage-monitor");
+        var group = endpoints.MapGroup("/api/usgm");
 
-        // Logs endpoints
         group.MapGet("/logs", async (
             IUsageMonitorService service,
             DateTime? from,
@@ -24,11 +23,12 @@ public static class UsageMonitorExtensions
             int page = 1,
             int pageSize = 20) =>
         {
-            (IEnumerable<RequestLog> logs, int totalCount) = await service.GetLogsAsync(from, to, page, pageSize);
+            (IEnumerable<RequestLog> logs, int totalCount) = await service.GetPaginatedLogsAsync(from, to, page, pageSize);
             return Results.Ok(new { logs, totalCount, currentPage = page });
+
         }).ExcludeFromDescription();
 
-        group.MapGet("/logs/errors", [ApiExplorerSettings(IgnoreApi = true)] async (
+        group.MapGet("/logs/errors", async (
             IUsageMonitorService service,
             DateTime? from,
             DateTime? to) =>
@@ -36,28 +36,24 @@ public static class UsageMonitorExtensions
             return await service.GetErrorLogsAsync(from, to);
         }).ExcludeFromDescription();
 
-        // API Client endpoints
-        group.MapGet("/clients", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
-        {
-            return await service.GetApiClientsAsync();
-        }).ExcludeFromDescription();
 
-        group.MapPost("/clients", [ApiExplorerSettings(IgnoreApi = true)] async (
+        group.MapPost("/client", async (
             IUsageMonitorService service,
             ApiClient client) =>
         {
             return await service.CreateApiClientAsync(client);
+
         }).ExcludeFromDescription();
 
-        // Admin Authentication endpoints
-        group.MapGet("/admin/exists", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
+
+        group.MapGet("/admin/exists", async (IUsageMonitorService service) =>
         {
             return await service.HasAdminAccountAsync();
         }).ExcludeFromDescription();
 
-        group.MapPost("/admin/setup", [ApiExplorerSettings(IgnoreApi = true)] async (
+        group.MapPost("/admin/setup", async (
             IUsageMonitorService service,
-            AdminSetupRequest request) =>
+            CreateAdminRequest request) =>
         {
             var success = await service.SetupAdminAccountAsync(request.Username, request.Password);
             if (!success)
@@ -65,7 +61,8 @@ public static class UsageMonitorExtensions
             return Results.Ok();
         }).ExcludeFromDescription();
 
-        group.MapPost("/admin/login", [ApiExplorerSettings(IgnoreApi = true)] async (
+
+        group.MapPost("/admin/login", async (
             IUsageMonitorService service,
             AdminLoginRequest request,
             HttpContext context) =>
@@ -75,57 +72,60 @@ public static class UsageMonitorExtensions
                 return Results.Unauthorized();
 
             context.Session.SetString("AdminAuthenticated", "true");
+
             return Results.Ok();
+
         }).ExcludeFromDescription();
 
-        // Client management endpoints
-        group.MapGet("/clients/{apiKey}/usage", async (
-            IUsageMonitorService service,
-            string apiKey) =>
+        group.MapGet("/client", async (
+           IUsageMonitorService service) =>
+       {
+           var client = await service.GetApiClientAsync();
+            if(client == null) return Results.NotFound();
+           return Results.Ok(client);
+       }).ExcludeFromDescription();
+
+
+        group.MapGet("/client/usage", async (
+            IUsageMonitorService service) =>
         {
-            var count = await service.GetTotalRequestCountAsync(apiKey);
+            var count = await service.GetTotalRequestCountAsync();
             return Results.Ok(new { count });
         }).ExcludeFromDescription();
 
-        group.MapPut("/clients/{id}/limit", [ApiExplorerSettings(IgnoreApi = true)] async (
+
+        group.MapPatch("/client/limit", async (
             IUsageMonitorService service,
-            int id,
             UpdateLimitRequest request) =>
         {
-            var success = await service.UpdateClientLimitAsync(id, request.UsageLimit);
+            var success = await service.AddClientRequestsAsync(request.UsageLimit);
             if (!success)
                 return Results.NotFound();
             return Results.Ok();
         }).ExcludeFromDescription();
 
-        group.MapPut("/clients/{id}", [ApiExplorerSettings(IgnoreApi = true)] async (
+        group.MapPatch("/client/", async (
             IUsageMonitorService service,
-            int id,
             ApiClient client) =>
         {
-            var success = await service.UpdateClientAsync(id, client);
+            var success = await service.UpdateClientAsync(client);
             if (!success)
                 return Results.NotFound();
             return Results.Ok();
+
         }).ExcludeFromDescription();
 
 
         group.MapGet("/analytics/usage", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
         {
-            var stats = await service.GetMonthlyUsageStatsAsync();
+            var stats = await service.GetMonthlyUsageAsync();
             return Results.Ok(stats);
         }).ExcludeFromDescription();
 
-        group.MapGet("/analytics/errors", [ApiExplorerSettings(IgnoreApi = true)] async (IUsageMonitorService service) =>
+        group.MapGet("/client/report", async (
+            IReportGenerationService reportService) =>
         {
-            var stats = await service.GetErrorRatesAsync();            return Results.Ok(stats);
-        }).ExcludeFromDescription();
-
-        group.MapGet("/clients/{apiKey}/report", async (
-            IReportGenerationService reportService,
-            string apiKey) =>
-        {
-            var pdfBytes = await reportService.GenerateClientUsageReportAsync(apiKey);
+            var pdfBytes = await reportService.GenerateClientUsageReportAsync();
             return Results.File(
                 pdfBytes,
                 "application/pdf",
@@ -137,7 +137,7 @@ public static class UsageMonitorExtensions
 
     public static IEndpointRouteBuilder MapUsageMonitorPages(this IEndpointRouteBuilder endpoints)
     {
-        // HTML Pages
+
         endpoints.MapGet("/usage", async context =>
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "Usage.html");
@@ -192,6 +192,8 @@ public static class UsageMonitorExtensions
             context.Response.ContentType = "application/javascript";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
+
+        endpoints.MapBlazorHub();
 
 
 

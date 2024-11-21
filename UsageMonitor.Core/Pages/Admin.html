@@ -30,33 +30,33 @@
             </div>
         </nav>
 
-        <!-- API Clients View -->
+        <!-- API Client View -->
         <div id="clients-view" class="container">
             <div class="row mb-4">
                 <div class="col">
-                    <h2>API Clients</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
-                        New Client
-                    </button>
+                    <h2>API Client</h2>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>API Key</th>
-                                    <th>Email</th>
-                                    <th>Monthly Limit</th>
-                                    <th>Usage</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clients-table-body">
-                            </tbody>
-                        </table>
+                    <div id="client-card" style="display: none;">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title" id="client-name"></h5>
+                                <p class="card-text">
+                                    <strong>Email:</strong> <span id="client-email"></span><br>
+                                    <strong>Usage:</strong> <span id="client-usage"></span>/<span
+                                        id="client-limit"></span> requests
+                                </p>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-primary" onclick="showEditClientModal()">Edit
+                                        Details</button>
+                                    <button class="btn btn-success" onclick="showAddRequestsModal()">Update Usage
+                                        Limit</button>
+                                    <button class="btn btn-info" onclick="showReportModal()">Download Report</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -88,8 +88,9 @@
             </div>
         </div>
 
-        <!-- New Client Modal -->
-        <div class="modal fade" id="newClientModal" tabindex="-1">
+        <!-- Initial Client Setup Modal -->
+        <div class="modal fade" id="initialClientModal" data-bs-backdrop="static" data-bs-keyboard="false"
+            tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -109,10 +110,6 @@
                             <div class="mb-3">
                                 <label class="form-label">Monthly Request Limit</label>
                                 <input type="number" class="form-control" name="usageLimit" required min="1">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">API Key</label>
-                                <input type="text" class="form-control" name="apiKey" required>
                             </div>
                         </form>
                     </div>
@@ -163,9 +160,7 @@
                     </div>
                     <div class="modal-body">
                         <form id="reportFilterForm">
-                            <input type="hidden" name="apiKey" id="reportApiKey">
                             <input type="hidden" name="clientCreatedAt" id="clientCreatedAt">
-
                             <div class="mb-3">
                                 <label class="form-label">Time Range</label>
                                 <select class="form-select" id="timeRangeSelect">
@@ -192,6 +187,7 @@
                         <button type="button" class="btn btn-primary" onclick="downloadReport()">Download</button>
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -224,8 +220,7 @@
     <script src="js/bootstrap.js"></script>
     <script src="js/chart.js"></script>
     <script>
-        function showReportModal(apiKey, createdAt) {
-            document.getElementById('reportApiKey').value = apiKey;
+        function showReportModal(createdAt) {
             document.getElementById('clientCreatedAt').value = createdAt;
             document.getElementById('timeRangeSelect').value = 'thisMonth';
             document.getElementById('customDateRange').style.display = 'none';
@@ -247,7 +242,6 @@
         });
 
         async function downloadReport() {
-            const apiKey = document.getElementById('reportApiKey').value;
             const timeRange = document.getElementById('timeRangeSelect').value;
             let startDate, endDate;
 
@@ -275,53 +269,60 @@
                 return;
             }
 
-            window.location.href = `/api/usage-monitor/clients/${apiKey}/report?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+            window.location.href = `/api/usgm/client/report?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
             bootstrap.Modal.getInstance(document.getElementById('reportFilterModal')).hide();
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadClients();
+            loadClient();
             setupEventListeners();
         });
 
-        async function loadClients() {
+        async function loadClient() {
             try {
-                const response = await fetch('/api/usage-monitor/clients');
-                const clients = await response.json();
-                const tableBody = document.getElementById('clients-table-body');
-                tableBody.innerHTML = '';
-
-                for (const client of clients) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${client.name}</td>
-                        <td>${client.apiKey}</td>
-                        <td>${client.email}</td>
-                        <td>${client.usageLimit}</td>
-                        <td>${await getClientUsage(client.apiKey)}/${client.usageLimit}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary edit-client" data-client-id="${client.id}" 
-                                    data-name="${client.name}" data-email="${client.email}">
-                                Edit
-                            </button>
-                            <button class="btn btn-sm btn-success add-limit" data-client-id="${client.id}">
-                                Add Requests
-                            </button>
-                            <button class="btn btn-sm btn-info" onclick="showReportModal('${client.apiKey}', '${client.createdAt}')">
-                                Download Report
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
+                const response = await fetch('/api/usgm/client');
+                if (response.status === 404) {
+                    // No client exists, show initial setup modal
+                    new bootstrap.Modal(document.getElementById('initialClientModal')).show();
+                    return;
                 }
+
+                const client = await response.json();
+                const usage = await getClientUsage();
+
+                // Update client card
+                document.getElementById('client-name').textContent = client.name;
+                document.getElementById('client-email').textContent = client.email;
+                document.getElementById('client-usage').textContent = usage;
+                document.getElementById('client-limit').textContent = client.usageLimit;
+
+                document.getElementById('client-card').style.display = 'block';
             } catch (error) {
-                console.error('Error loading clients:', error);
+                console.error('Error loading client:', error);
             }
         }
 
-        async function getClientUsage(apiKey) {
+         function showEditClientModal() {
+            const form = document.getElementById('editClientForm');
+            const client = {
+                name: document.getElementById('client-name').textContent,
+                email: document.getElementById('client-email').textContent
+            };
+
+            form.querySelector('input[name="clientId"]').value = client.clientId;
+            form.querySelector('input[name="name"]').value = client.name;
+            form.querySelector('input[name="email"]').value = client.email;
+
+            new bootstrap.Modal(document.getElementById('editClientModal')).show();
+        }
+
+        function showAddRequestsModal() {
+            new bootstrap.Modal(document.getElementById('addRequestsModal')).show();
+        }
+
+        async function getClientUsage() {
             try {
-                const response = await fetch(`/api/usage-monitor/clients/${apiKey}/usage`);
+                const response = await fetch(`/api/usgm/client/usage`);
                 const usage = await response.json();
                 return usage.count;
             } catch (error) {
@@ -347,21 +348,20 @@
                 const client = {
                     name: formData.get('name'),
                     email: formData.get('email'),
-                    usageLimit: parseInt(formData.get('usageLimit')),
-                    apiKey: formData.get('apiKey')
+                    usageLimit: parseInt(formData.get('usageLimit'))
                 };
 
                 try {
-                    const response = await fetch('/api/usage-monitor/clients', {
+                    const response = await fetch('/api/usgm/client', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(client)
                     });
 
                     if (response.ok) {
-                        bootstrap.Modal.getInstance(document.getElementById('newClientModal')).hide();
+                        bootstrap.Modal.getInstance(document.getElementById('initialClientModal')).hide();
                         form.reset();
-                        loadClients();
+                        loadClient();
                     }
                 } catch (error) {
                     console.error('Error creating client:', error);
@@ -373,7 +373,7 @@
             document.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('download-report')) {
                     const apiKey = e.target.dataset.apiKey;
-                    window.location.href = `/api/usage-monitor/clients/${apiKey}/report`;
+                    window.location.href = `/api/usgm/client/report`;
                 }
                 if (e.target.classList.contains('edit-client')) {
                     const { clientId, name, email } = e.target.dataset;
@@ -399,8 +399,8 @@
                 };
 
                 try {
-                    const response = await fetch(`/api/usage-monitor/clients/${clientId}`, {
-                        method: 'PUT',
+                    const response = await fetch(`/api/usgm/client/`, {
+                        method: 'Patch',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(client)
                     });
@@ -421,8 +421,8 @@
                 const newLimit = parseInt(form.querySelector('input[name="newLimit"]').value);
 
                 try {
-                    const response = await fetch(`/api/usage-monitor/clients/${clientId}/limit`, {
-                        method: 'PUT',
+                    const response = await fetch(`/api/usgm/client/limit`, {
+                        method: 'Patch',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ usageLimit: newLimit })
                     });
@@ -452,15 +452,15 @@
         async function loadAnalytics() {
             try {
                 // Load usage stats
-                const usageResponse = await fetch('/api/usage-monitor/analytics/usage');
+                const usageResponse = await fetch('/api/usgm/analytics/usage');
                 const usageStats = await usageResponse.json();
 
                 // Load error rates
-                const errorResponse = await fetch('/api/usage-monitor/analytics/errors');
-                const errorStats = await errorResponse.json();
+                const errorResponse = await fetch('/api/ugsm/logs/errors');
+                const errorStats = 0;
 
                 // Load recent logs
-                const logsResponse = await fetch('/api/usage-monitor/logs');
+                const logsResponse = await fetch('/api/usgm/logs');
                 const logs = await logsResponse.json();
 
                 // Create usage chart

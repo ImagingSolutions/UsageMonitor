@@ -7,7 +7,7 @@ namespace UsageMonitor.Core.Services;
 
 public interface IReportGenerationService
 {
-    Task<byte[]> GenerateClientUsageReportAsync(string apiKey, DateTime? startDate = null, DateTime? endDate = null);
+    Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null);
 }
 
 public class ReportGenerationService : IReportGenerationService
@@ -19,29 +19,27 @@ public class ReportGenerationService : IReportGenerationService
         _usageMonitorService = usageMonitorService;
     }
 
-    public async Task<byte[]> GenerateClientUsageReportAsync(string apiKey, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        var client = await _usageMonitorService.GetApiClientByKeyAsync(apiKey);
-        if (client == null) throw new ArgumentException("Invalid API key");
+        var client = await _usageMonitorService.GetApiClientAsync();
 
-        // Validate date range
         if (startDate.HasValue && startDate.Value < client.CreatedAt)
         {
             startDate = client.CreatedAt;
         }
-        
+
         if (!startDate.HasValue)
         {
             startDate = DateTime.UtcNow.AddMonths(-1);
         }
-        
+
         if (!endDate.HasValue)
         {
             endDate = DateTime.UtcNow;
         }
 
-        var totalRequests = await _usageMonitorService.GetTotalRequestCountAsync(apiKey);
-        var logs = await _usageMonitorService.GetRequestLogsAsync(apiKey, startDate.Value, endDate.Value);
+        var totalRequests = await _usageMonitorService.GetTotalRequestCountAsync();
+        var logs = await _usageMonitorService.GetLogsAsync(startDate.Value, endDate.Value);
 
         QuestPDF.Settings.License = LicenseType.Community;
         return Document.Create(container =>
@@ -99,7 +97,7 @@ public class ReportGenerationService : IReportGenerationService
             column.Item().Padding(10).Column(logsSection =>
             {
                 logsSection.Item().Text("Request Logs").FontSize(16).SemiBold();
-                
+
                 logsSection.Item().Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
@@ -120,7 +118,7 @@ public class ReportGenerationService : IReportGenerationService
                     foreach (var log in logs)
                     {
                         table.Cell().Padding(5).Text(log.RequestTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                        table.Cell().Padding(5).Text(log.TimeSpent);
+                        table.Cell().Padding(5).Text(log.Duration.ToString());
                         table.Cell().Padding(5).Text(log.StatusCode.ToString());
                     }
                 });

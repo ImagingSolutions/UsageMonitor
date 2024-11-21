@@ -8,22 +8,18 @@ namespace UsageMonitor.Core.Services;
 public interface IUsageMonitorService
 {
     Task LogRequestAsync(RequestLog log);
-    Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetLogsAsync(DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 20);
-    Task<IEnumerable<RequestLog>> GetRequestLogsAsync(string apiKey, DateTime from, DateTime to);
+    Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetPaginatedLogsAsync(DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 20);
+    Task<IEnumerable<RequestLog>> GetLogsAsync(DateTime from, DateTime to);
     Task<IEnumerable<RequestLog>> GetErrorLogsAsync(DateTime? from = null, DateTime? to = null);
-    Task<ApiClient?> GetApiClientByKeyAsync(string apiKey);
-
-    Task<IEnumerable<ApiClient>> GetApiClientsAsync();
+    Task<ApiClient> GetApiClientAsync();
     Task<ApiClient> CreateApiClientAsync(ApiClient client);
-    Task<bool> UpdateClientLimitAsync(int clientId, int newLimit);
-    Task<Dictionary<string, int>> GetMonthlyUsageStatsAsync();
-    Task<Dictionary<string, int>> GetErrorRatesAsync();
+    Task<bool> AddClientRequestsAsync(int requests);
     Task<bool> ValidateAdminLoginAsync(string username, string password);
     Task<bool> SetupAdminAccountAsync(string username, string password);
-    Task<int> GetTotalRequestCountAsync(string apiKey);
-    
-    Task<bool> UpdateClientAsync(int clientId, ApiClient updatedClient);
+    Task<int> GetTotalRequestCountAsync();
+    Task<bool> UpdateClientAsync(ApiClient updatedClient);
     Task<bool> HasAdminAccountAsync();
+    Task<Dictionary<string, int>> GetMonthlyUsageAsync();
 }
 
 public class UsageMonitorService : IUsageMonitorService
@@ -36,23 +32,23 @@ public class UsageMonitorService : IUsageMonitorService
         _context = context;
     }
 
-     public async Task LogRequestAsync(RequestLog log)
+    public async Task LogRequestAsync(RequestLog log)
     {
         await _context.RequestLogs.AddAsync(log);
         await _context.SaveChangesAsync();
     }
-    
-    public async Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetLogsAsync(
-        DateTime? from = null, 
-        DateTime? to = null, 
-        int page = 1, 
+
+    public async Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetPaginatedLogsAsync(
+        DateTime? from = null,
+        DateTime? to = null,
+        int page = 1,
         int pageSize = 20)
     {
         var query = _context.RequestLogs.AsQueryable();
-        
+
         if (from.HasValue)
             query = query.Where(x => x.RequestTime >= from.Value);
-        
+
         if (to.HasValue)
             query = query.Where(x => x.RequestTime <= to.Value);
 
@@ -69,40 +65,36 @@ public class UsageMonitorService : IUsageMonitorService
     public async Task<IEnumerable<RequestLog>> GetErrorLogsAsync(DateTime? from = null, DateTime? to = null)
     {
         var query = _context.RequestLogs.Where(x => x.StatusCode >= 400);
-        
+
         if (from.HasValue)
             query = query.Where(x => x.RequestTime >= from.Value);
-        
+
         if (to.HasValue)
             query = query.Where(x => x.RequestTime <= to.Value);
 
         return await query.OrderByDescending(x => x.RequestTime).ToListAsync();
     }
 
-    public async Task<int> GetTotalRequestCountAsync(string apiKey)
+    public async Task<int> GetTotalRequestCountAsync()
     {
-        return await _context.RequestLogs
-            .CountAsync(x => x.ApiKey == apiKey);
-    }
-
-    public async Task<ApiClient?> GetApiClientByKeyAsync(string apiKey)
-    {
-        return await _context.ApiClients
-            .FirstOrDefaultAsync(x => x.ApiKey == apiKey);
-    }
-
-    public async Task<IEnumerable<ApiClient>> GetApiClientsAsync()
-    {
-        return await _context.ApiClients.ToListAsync();
+        var client = await _context.ApiClients.FirstOrDefaultAsync();
+        return await _context.RequestLogs.Where(rq=>rq.RequestTime>=client.UsageCycle)
+            .CountAsync();
     }
 
     public async Task<ApiClient> CreateApiClientAsync(ApiClient client)
     {
         client.CreatedAt = DateTime.UtcNow;
-        
+
         await _context.ApiClients.AddAsync(client);
         await _context.SaveChangesAsync();
-        
+
+        return client;
+    }
+
+    public async Task<ApiClient> GetApiClientAsync()
+    {
+        var client = await _context.ApiClients.FirstOrDefaultAsync() ?? null;
         return client;
     }
 
@@ -138,34 +130,36 @@ public class UsageMonitorService : IUsageMonitorService
         return await _context.Admins.AnyAsync();
     }
 
-    public async Task<bool> UpdateClientLimitAsync(int clientId, int newLimit)
+    public async Task<bool> AddClientRequestsAsync(int newLimit)
     {
-        var client = await _context.ApiClients.FindAsync(clientId);
+        var client = await _context.ApiClients.FirstOrDefaultAsync();
         if (client == null) return false;
 
-        var usedRequests = await _context.RequestLogs
-            .CountAsync(x => x.ApiClientId == clientId);
-        
+        var usedRequests = await _context.RequestLogs.Where(rq=>rq.RequestTime>=client.UsageCycle)
+            .CountAsync();
+
         var remainingRequests = Math.Max(0, client.UsageLimit - usedRequests);
         client.UsageLimit = remainingRequests + newLimit;
         
+        client.UsageCycle = DateTime.UtcNow;
+
         await _context.SaveChangesAsync();
         return true;
     }
 
-    public async Task<bool> UpdateClientAsync(int clientId, ApiClient updatedClient)
+    public async Task<bool> UpdateClientAsync(ApiClient updatedClient)
     {
-        var client = await _context.ApiClients.FindAsync(clientId);
+        var client = await _context.ApiClients.FirstOrDefaultAsync();
         if (client == null) return false;
 
         client.Name = updatedClient.Name;
         client.Email = updatedClient.Email;
-        
+
         await _context.SaveChangesAsync();
         return true;
     }
 
-    public async Task<Dictionary<string, int>> GetMonthlyUsageStatsAsync()
+    public async Task<Dictionary<string, int>> GetMonthlyUsageAsync()
     {
         var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var stats = await _context.RequestLogs
@@ -177,22 +171,11 @@ public class UsageMonitorService : IUsageMonitorService
         return stats;
     }
 
-    public async Task<Dictionary<string, int>> GetErrorRatesAsync()
-    {
-        var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-        var stats = await _context.RequestLogs
-            .Where(x => x.RequestTime >= startOfMonth && x.StatusCode >= 400)
-            .GroupBy(x => x.ApiKey)
-            .Select(g => new { ApiKey = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ApiKey, x => x.Count);
-        return stats;
-    }
-
-    public async Task<IEnumerable<RequestLog>> GetRequestLogsAsync(string apiKey, DateTime from, DateTime to)
+    public async Task<IEnumerable<RequestLog>> GetLogsAsync(DateTime from, DateTime to)
     {
         return await _context.RequestLogs
-            .Where(x => x.ApiKey == apiKey && x.RequestTime >= from && x.RequestTime <= to)
+            .Where(x => x.RequestTime >= from && x.RequestTime <= to)
             .OrderByDescending(x => x.RequestTime)
             .ToListAsync();
     }
-}   
+}

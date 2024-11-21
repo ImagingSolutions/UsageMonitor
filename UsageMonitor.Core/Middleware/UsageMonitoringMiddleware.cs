@@ -1,4 +1,5 @@
 
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using UsageMonitor.Core.Config;
@@ -13,6 +14,7 @@ public class UsageMonitoringMiddlware
     private readonly RequestDelegate _next;
     private readonly IServiceProvider _serviceProvider;
     private readonly UsageMonitorOptions _options;
+    private static readonly Stopwatch _stopwatch = new();
 
     public UsageMonitoringMiddlware(
         RequestDelegate next,
@@ -34,26 +36,17 @@ public class UsageMonitoringMiddlware
         }
 
         using var scope = _serviceProvider.CreateScope();
-        var loggerService = scope.ServiceProvider.GetRequiredService<IUsageMonitorService>();
+        var _usageService = scope.ServiceProvider.GetRequiredService<IUsageMonitorService>();
 
-        var apiKey = context.Request.Headers[_options.ApiKeyHeader].ToString();
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "API key is required" });
-            return;
-        }
-
-        // Check rate limit
-        var apiClient = await loggerService.GetApiClientByKeyAsync(apiKey);
+        var apiClient = await _usageService.GetApiClientAsync();
         if (apiClient == null)
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "Invalid API key" });
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsJsonAsync(new { error = "Please create an admin account first" });
             return;
         }
 
-        var totalCount = await loggerService.GetTotalRequestCountAsync(apiKey);
+        var totalCount = await _usageService.GetTotalRequestCountAsync();
         if (totalCount >= apiClient.UsageLimit)
         {
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -61,18 +54,18 @@ public class UsageMonitoringMiddlware
             return;
         }
 
-
         var log = new RequestLog
         {
             RequestTime = DateTime.UtcNow,
+            Path = context.Request.Path,
         };
 
+        _stopwatch.Start();
 
         try
         {
             await _next(context);
             log.StatusCode = context.Response.StatusCode;
-
         }
         catch (Exception ex)
         {
@@ -81,12 +74,10 @@ public class UsageMonitoringMiddlware
         }
         finally
         {
-            log.ResponseTime = DateTime.UtcNow;
-
-            log.ApiKey = apiKey;
+            log.Duration = _stopwatch.Elapsed.TotalSeconds;
             log.ApiClientId = apiClient.Id;
-
-            await loggerService.LogRequestAsync(log);
+            await _usageService.LogRequestAsync(log);
+            _stopwatch.Reset();
         }
     }
 

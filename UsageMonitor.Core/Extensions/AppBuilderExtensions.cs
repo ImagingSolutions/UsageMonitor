@@ -11,6 +11,7 @@ public static class AppBuilderExtensions
 
     public static IApplicationBuilder UseUsageMonitor(this IApplicationBuilder app)
     {
+        app.UseAuthorization();
         app.UseDefaultFiles();
         app.UseSession();
         app.UseStaticFiles();

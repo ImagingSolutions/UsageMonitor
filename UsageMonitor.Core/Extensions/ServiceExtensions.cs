@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using UsageMonitor.Core.Config;
 using UsageMonitor.Core.Data;
 using UsageMonitor.Core.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace UsageMonitor.Core.Extensions;
 
@@ -54,6 +55,8 @@ public static class ServiceExtensions
         services.AddScoped<IReportGenerationService, ReportGenerationService>();
 
         services.AddDirectoryBrowser();
+        services.AddServerSideBlazor();
+        services.AddRazorComponents();
     
 
         using var serviceProvider = services.BuildServiceProvider();

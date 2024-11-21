@@ -19,19 +19,20 @@ public class UsageMonitorDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<RequestLog>(entity =>
-       {
-           entity.HasKey(e => e.Id);
-           entity.Property(e => e.RequestTime).IsRequired();
-           entity.HasOne(e => e.ApiClient)
-                 .WithMany(a => a.RequestLogs)
-                 .HasForeignKey(e => e.ApiClientId)
-                 .IsRequired();
-       });
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RequestTime).IsRequired();
+            entity.Property(e => e.Path).IsRequired();
+            entity.Property(e => e.Duration).IsRequired();
+            entity.HasOne(e => e.ApiClient)
+                    .WithMany(a => a.RequestLogs)
+                    .HasForeignKey(e => e.ApiClientId)
+                    .IsRequired();
+        });
 
         modelBuilder.Entity<ApiClient>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.ApiKey).IsRequired();
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.UsageLimit).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
