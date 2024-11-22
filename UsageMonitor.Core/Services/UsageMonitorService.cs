@@ -20,6 +20,9 @@ public interface IUsageMonitorService
     Task<bool> UpdateClientAsync(ApiClient updatedClient);
     Task<bool> HasAdminAccountAsync();
     Task<Dictionary<string, int>> GetMonthlyUsageAsync();
+    Task<bool> LogRequestAsync(RequestLog log);
+    Task<PaymentUsageStats> GetPaymentUsageStatsAsync(int paymentId);
+    Task<IEnumerable<PaymentUsageStats>> GetAllPaymentStatsAsync();
 }
 
 public class UsageMonitorService : IUsageMonitorService
@@ -173,4 +176,77 @@ public class UsageMonitorService : IUsageMonitorService
             .OrderByDescending(x => x.RequestTime)
             .ToListAsync();
     }
+
+    public async Task<bool> LogRequestAsync(RequestLog log)
+    {
+        var client = await _context.ApiClients
+            .Include(c => c.Payments)
+            .FirstOrDefaultAsync();
+            
+        if (client == null) return false;
+
+        // Find the first payment that still has available requests
+        var activePayment = client.Payments?
+            .OrderBy(p => p.CreatedAt)
+            .FirstOrDefault(p => !p.IsFullyUtilized);
+
+        if (activePayment == null) return false;
+
+        // Assign the request to this payment and increment its usage
+        log.PaymentId = activePayment.Id;
+        activePayment.UsedRequests++;
+
+        _context.RequestLogs.Add(log);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
+
+    public async Task<PaymentUsageStats> GetPaymentUsageStatsAsync(int paymentId)
+    {
+        var payment = await _context.Payments
+            .Include(p => p.Requests)
+            .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+        if (payment == null) return null;
+
+        return new PaymentUsageStats
+        {
+            PaymentId = payment.Id,
+            Amount = payment.Amount,
+            TotalRequests = payment.TotalRequests,
+            UsedRequests = payment.UsedRequests,
+            RemainingRequests = payment.RemainingRequests,
+            CreatedAt = payment.CreatedAt
+        };
+    }
+
+    public async Task<IEnumerable<PaymentUsageStats>> GetAllPaymentStatsAsync()
+    {
+        var client = await _context.ApiClients
+            .Include(c => c.Payments)
+            .FirstOrDefaultAsync();
+
+        if (client?.Payments == null) return Enumerable.Empty<PaymentUsageStats>();
+
+        return client.Payments.Select(p => new PaymentUsageStats
+        {
+            PaymentId = p.Id,
+            Amount = p.Amount,
+            TotalRequests = p.TotalRequests,
+            UsedRequests = p.UsedRequests,
+            RemainingRequests = p.RemainingRequests,
+            CreatedAt = p.CreatedAt
+        });
+    }
+}
+
+public class PaymentUsageStats
+{
+    public int PaymentId { get; set; }
+    public decimal Amount { get; set; }
+    public int TotalRequests { get; set; }
+    public int UsedRequests { get; set; }
+    public int RemainingRequests { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

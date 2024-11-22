@@ -51,58 +51,89 @@ public class DatabaseInitializer : IDatabaseInitializer
                     CREATE TABLE IF NOT EXISTS ApiClients (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         Name TEXT NOT NULL,
-                        Email TEXT,
-                        CreatedAt DATETIME NOT NULL,
-                        UsageCycle DATETIME NOT NULL,
-                        AmountPaid DECIMAL(18,2) NOT NULL,
-                        UnitPrice DECIMAL(18,2) NOT NULL
+                        Email TEXT NOT NULL,
+                        CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Payments (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ApiClientId INTEGER NOT NULL,
+                        Amount DECIMAL(18,2) NOT NULL,
+                        UnitPrice DECIMAL(18,2) NOT NULL,
+                        UsedRequests INTEGER DEFAULT 0,
+                        CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id) ON DELETE CASCADE
                     );
 
                     CREATE TABLE IF NOT EXISTS RequestLogs (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        StatusCode INTEGER NOT NULL,
-                        Path TEXT NOT NULL,
-                        RequestTime DATETIME NOT NULL,
-                        Duration REAL NOT NULL,
                         ApiClientId INTEGER NOT NULL,
-                        FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id)
+                        PaymentId INTEGER,
+                        Path TEXT NOT NULL,
+                        Method TEXT NOT NULL,
+                        StatusCode INTEGER NOT NULL,
+                        Duration INTEGER NOT NULL,
+                        RequestTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id) ON DELETE CASCADE,
+                        FOREIGN KEY (PaymentId) REFERENCES Payments(Id) ON DELETE SET NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS Admins (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         Username TEXT NOT NULL UNIQUE,
                         PasswordHash TEXT NOT NULL,
-                        CreatedAt DATETIME NOT NULL
-                    );";
+                        CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_requestlogs_apiclientid ON RequestLogs(ApiClientId);
+                    CREATE INDEX IF NOT EXISTS idx_requestlogs_paymentid ON RequestLogs(PaymentId);
+                    CREATE INDEX IF NOT EXISTS idx_payments_apiclientid ON Payments(ApiClientId);";
 
             case DatabaseProvider.PostgreSQL:
                 return @"
                     CREATE TABLE IF NOT EXISTS ""ApiClients"" (
                         ""Id"" SERIAL PRIMARY KEY,
                         ""Name"" TEXT NOT NULL,
-                        ""Email"" TEXT,
-                        ""CreatedAt"" TIMESTAMP NOT NULL,
-                        ""UsageCycle"" TIMESTAMP NOT NULL,
-                        ""AmountPaid"" DECIMAL(18,2) NOT NULL,
-                        ""UnitPrice"" DECIMAL(18,2) NOT NULL
+                        ""Email"" TEXT NOT NULL,
+                        ""CreatedAt"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    CREATE TABLE IF NOT EXISTS ""Payments"" (
+                        ""Id"" SERIAL PRIMARY KEY,
+                        ""ApiClientId"" INTEGER NOT NULL,
+                        ""Amount"" DECIMAL(18,2) NOT NULL,
+                        ""UnitPrice"" DECIMAL(18,2) NOT NULL,
+                        ""UsedRequests"" INTEGER DEFAULT 0,
+                        ""CreatedAt"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT ""FK_Payments_ApiClients"" FOREIGN KEY (""ApiClientId"") 
+                            REFERENCES ""ApiClients""(""Id"") ON DELETE CASCADE
                     );
 
                     CREATE TABLE IF NOT EXISTS ""RequestLogs"" (
                         ""Id"" SERIAL PRIMARY KEY,
-                        ""StatusCode"" INTEGER NOT NULL,
-                        ""Path"" TEXT NOT NULL,
-                        ""RequestTime"" TIMESTAMP NOT NULL,
-                        ""Duration"" DOUBLE PRECISION NOT NULL,
                         ""ApiClientId"" INTEGER NOT NULL,
-                        FOREIGN KEY (""ApiClientId"") REFERENCES ""ApiClients""(""Id"")
+                        ""PaymentId"" INTEGER,
+                        ""Path"" TEXT NOT NULL,
+                        ""Method"" TEXT NOT NULL,
+                        ""StatusCode"" INTEGER NOT NULL,
+                        ""Duration"" BIGINT NOT NULL,
+                        ""RequestTime"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT ""FK_RequestLogs_ApiClients"" FOREIGN KEY (""ApiClientId"") 
+                            REFERENCES ""ApiClients""(""Id"") ON DELETE CASCADE,
+                        CONSTRAINT ""FK_RequestLogs_Payments"" FOREIGN KEY (""PaymentId"") 
+                            REFERENCES ""Payments""(""Id"") ON DELETE SET NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS ""Admins"" (
                         ""Id"" SERIAL PRIMARY KEY,
                         ""Username"" TEXT NOT NULL UNIQUE,
                         ""PasswordHash"" TEXT NOT NULL,
-                        ""CreatedAt"" TIMESTAMP NOT NULL
-                    );";
+                        ""CreatedAt"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_requestlogs_apiclientid ON ""RequestLogs""(""ApiClientId"");
+                    CREATE INDEX IF NOT EXISTS idx_requestlogs_paymentid ON ""RequestLogs""(""PaymentId"");
+                    CREATE INDEX IF NOT EXISTS idx_payments_apiclientid ON ""Payments""(""ApiClientId"");";
 
             case DatabaseProvider.SQLServer:
                 return @"
@@ -110,12 +141,23 @@ public class DatabaseInitializer : IDatabaseInitializer
                     BEGIN
                         CREATE TABLE ApiClients (
                             Id INT IDENTITY(1,1) PRIMARY KEY,
-                            Name NVARCHAR(MAX) NOT NULL,
-                            Email NVARCHAR(MAX),
-                            CreatedAt DATETIME NOT NULL,
-                            UsageCycle DATETIME NOT NULL,
-                            AmountPaid DECIMAL(18,2) NOT NULL,
-                            UnitPrice DECIMAL(18,2) NOT NULL
+                            Name NVARCHAR(255) NOT NULL,
+                            Email NVARCHAR(255) NOT NULL,
+                            CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Payments')
+                    BEGIN
+                        CREATE TABLE Payments (
+                            Id INT IDENTITY(1,1) PRIMARY KEY,
+                            ApiClientId INT NOT NULL,
+                            Amount DECIMAL(18,2) NOT NULL,
+                            UnitPrice DECIMAL(18,2) NOT NULL,
+                            UsedRequests INT DEFAULT 0,
+                            CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+                            CONSTRAINT FK_Payments_ApiClients FOREIGN KEY (ApiClientId) 
+                                REFERENCES ApiClients(Id) ON DELETE CASCADE
                         );
                     END
 
@@ -123,12 +165,17 @@ public class DatabaseInitializer : IDatabaseInitializer
                     BEGIN
                         CREATE TABLE RequestLogs (
                             Id INT IDENTITY(1,1) PRIMARY KEY,
-                            StatusCode INT NOT NULL,
-                            Path NVARCHAR(MAX) NOT NULL,
-                            RequestTime DATETIME NOT NULL,
-                            Duration FLOAT NOT NULL,
                             ApiClientId INT NOT NULL,
-                            FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id)
+                            PaymentId INT,
+                            Path NVARCHAR(MAX) NOT NULL,
+                            Method NVARCHAR(10) NOT NULL,
+                            StatusCode INT NOT NULL,
+                            Duration BIGINT NOT NULL,
+                            RequestTime DATETIME2 DEFAULT GETUTCDATE(),
+                            CONSTRAINT FK_RequestLogs_ApiClients FOREIGN KEY (ApiClientId) 
+                                REFERENCES ApiClients(Id) ON DELETE CASCADE,
+                            CONSTRAINT FK_RequestLogs_Payments FOREIGN KEY (PaymentId) 
+                                REFERENCES Payments(Id) ON DELETE SET NULL
                         );
                     END
 
@@ -138,9 +185,18 @@ public class DatabaseInitializer : IDatabaseInitializer
                             Id INT IDENTITY(1,1) PRIMARY KEY,
                             Username NVARCHAR(450) NOT NULL UNIQUE,
                             PasswordHash NVARCHAR(MAX) NOT NULL,
-                            CreatedAt DATETIME NOT NULL
+                            CreatedAt DATETIME2 DEFAULT GETUTCDATE()
                         );
-                    END";
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_apiclientid')
+                        CREATE INDEX idx_requestlogs_apiclientid ON RequestLogs(ApiClientId);
+
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_paymentid')
+                        CREATE INDEX idx_requestlogs_paymentid ON RequestLogs(PaymentId);
+
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_payments_apiclientid')
+                        CREATE INDEX idx_payments_apiclientid ON Payments(ApiClientId);";
 
             default:
                 throw new ArgumentException("Unsupported database provider");

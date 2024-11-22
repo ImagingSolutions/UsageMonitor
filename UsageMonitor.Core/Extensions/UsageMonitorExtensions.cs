@@ -129,6 +129,18 @@ public static class UsageMonitorExtensions
                 $"usage-report-{DateTime.Now:yyyyMMdd}.pdf");
         }).ExcludeFromDescription();
 
+        group.MapGet("/payments", async (IUsageMonitorService service) =>
+        {
+            return await service.GetAllPaymentStatsAsync();
+        }).ExcludeFromDescription();
+
+        group.MapGet("/payments/{id}", async (IUsageMonitorService service, int id) =>
+        {
+            var stats = await service.GetPaymentUsageStatsAsync(id);
+            if (stats == null) return Results.NotFound();
+            return Results.Ok(stats);
+        }).ExcludeFromDescription();
+
         return endpoints;
     }
 
