@@ -1,11 +1,9 @@
-
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using UsageMonitor.Core.Config;
 using UsageMonitor.Core.Models;
 using UsageMonitor.Core.Services;
-
 
 namespace UsageMonitor.Core.Middleware;
 
@@ -28,7 +26,6 @@ public class UsageMonitoringMiddlware
 
     public async Task InvokeAsync(HttpContext context)
     {
-
         if (!ShouldLog(context))
         {
             await _next(context);
@@ -46,18 +43,12 @@ public class UsageMonitoringMiddlware
             return;
         }
 
-        var totalCount = await _usageService.GetTotalRequestCountAsync();
-        if (totalCount >= apiClient.UsageLimit)
-        {
-            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            await context.Response.WriteAsJsonAsync(new { error = "Monthly API limit exceeded" });
-            return;
-        }
-
         var log = new RequestLog
         {
             RequestTime = DateTime.UtcNow,
             Path = context.Request.Path,
+            Method = context.Request.Method,
+            ApiClientId = apiClient.Id
         };
 
         _stopwatch.Start();
@@ -69,14 +60,24 @@ public class UsageMonitoringMiddlware
         }
         catch (Exception ex)
         {
-            log.StatusCode = 500;
+            log.StatusCode = StatusCodes.Status500InternalServerError;
             throw;
         }
         finally
         {
+            _stopwatch.Stop();
             log.Duration = _stopwatch.Elapsed.TotalSeconds;
-            log.ApiClientId = apiClient.Id;
-            await _usageService.LogRequestAsync(log);
+            
+            var success = await _usageService.LogRequestAsync(log);
+            if (!success)
+            {
+                context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = "No active payment found or all payments are fully utilized",
+                });
+            }
+            
             _stopwatch.Reset();
         }
     }

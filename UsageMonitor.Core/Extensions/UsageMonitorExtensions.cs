@@ -36,9 +36,11 @@ public static class UsageMonitorExtensions
 
         group.MapPost("/client", async (
             IUsageMonitorService service,
-            ApiClient clientData) =>
+            CreateNewClient clientData) =>
         {
-            return await service.CreateApiClientAsync(clientData);
+            var newClient =  await service.CreateApiClientAsync(clientData);
+
+            return Results.Ok(newClient);
 
         }).ExcludeFromDescription();
 
@@ -86,8 +88,8 @@ public static class UsageMonitorExtensions
         group.MapGet("/client/usage", async (
             IUsageMonitorService service) =>
         {
-            var count = await service.GetTotalRequestCountAsync();
-            return Results.Ok(new { count });
+            var usage = await service.GetClientUsageAsync();
+            return Results.Ok(usage);
         }).ExcludeFromDescription();
 
 
@@ -95,7 +97,7 @@ public static class UsageMonitorExtensions
             IUsageMonitorService service,
             UpdatePaymentRequest request) =>
         {
-            var success = await service.AddClientPaymentAsync(request.AdditionalAmount);
+            var success = await service.AddClientPaymentAsync(request.AdditionalAmount, request.unitPrice);
             if (!success)
                 return Results.NotFound();
             return Results.Ok();

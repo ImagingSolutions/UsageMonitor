@@ -8,7 +8,7 @@ public class RequestLog
     public string Path { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;
     public int StatusCode { get; set; }
-    public long Duration { get; set; }
+    public double Duration { get; set; }
     public DateTime RequestTime { get; set; }
     
     // Navigation properties

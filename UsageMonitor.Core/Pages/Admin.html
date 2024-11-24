@@ -7,211 +7,317 @@
     <title>Usage Monitor - Admin</title>
     <link rel="stylesheet" href="css/core.css">
     <link rel="stylesheet" href="css/theme.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 
 <body>
-    <div class=" w-100">
-
-        <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 w-100 ">
-            <div class="container ">
-                <p class="text-center">Api Usage Management Admin</p>
+    <div style="display:inline-flex" class="layout-wrapper ">
+        <aside style="width:20rem" class=" layout-menu menu-vertical menu bg-menu-theme">
+            <div class="app-brand demo">
+                <a href="#" class="app-brand-link">
+                    <h4 class="app-brand-text fw-bold ms-2">Usage Monitor</h4>
+                </a>
+                <a  class="layout-menu-toggle menu-link ms-auto d-xl-none">
+                    <i class="bx bx-chevron-left bx-sm"></i>
+                </a>
             </div>
-        </nav>
 
-        <!-- Add Client Modal -->
-        <div class="modal fade" id="initialClientModal" data-bs-backdrop="static" data-bs-keyboard="false"
-            tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">New API Client</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="newClientForm">
-                            <div class="mb-3">
-                                <label class="form-label">Name</label>
-                                <input type="text" class="form-control" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Amount Paid</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" name="amountPaid" required min="1"
-                                        step="1">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Price per Request</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" name="unitPrice" required min="0.01"
-                                        step="0.01">
-                                </div>
-                            </div>
+            <ul class="menu-inner py-1 " >
+                <li class="menu-item active">
+                    <a href="#overview" class="menu-link" data-section="overview">
+                        <i class="menu-icon bx bx-home-circle"></i>
+                        <div>Overview</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#payments" class="menu-link" data-section="payments">
+                        <i class="menu-icon bx bx-credit-card"></i>
+                        <div>Payments</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#analytics" class="menu-link" data-section="analytics">
+                        <i class="menu-icon bx bx-chart"></i>
+                        <div>Analytics</div>
+                    </a>
+                </li>
+            </ul>
+        </aside>
 
-                            <div class="mb-3">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="txtUsagePreview" readonly 
-                                        placeholder="Available Requests">
-                                    <button class="btn btn-outline-success" type="button" id="btnUsagePreview">
-                                        Calculate available requests
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer gap-3">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="saveNewClient">Create</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Client View  -->
-        <div id="client-view" class="container">
-            <div class="row mb-4">
-                <h2>
-                    API Client
-                </h2>
-            </div>
-            <!-- Client Card -->
-            <div class="row">
-                <div class="col">
-                    <div id="client-card" style="display:none;">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title" id="clientName"></h5>
-                                <p class="card-text">
-                                    <strong>Email:</strong> <span id="clientEmail"></span><br>
-                                    <strong>Usage:</strong> <span id="clientUsage"></span>/<span
-                                        id="clientLimit"></span> requests
-                                </p>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-primary" id="editClientBtn">Edit Details</button>
-                                    <button class="btn btn-success" id="addPaymentBtn">Update Usage Limit</button>
-                                    <button class="btn btn-info" id="reportBtn">Download Report</button>
+        <div class=" layout-page w-100">
+            <div class="content-wrapper">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section active">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <!-- Your existing content here -->
+                        <div class="row mb-4">
+                            <h2 >API Client Overview</h2>
+                        </div>
+                        <div id="client-view">
+                            <div id="client-card" style="display:none;">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="clientName"></h5>
+                                        <p class="card-text">
+                                            <strong>Email:</strong> <span id="clientEmail"></span><br>
+                                            <strong>Usage:</strong> <span id="clientUsage"></span>/<span id="clientLimit"></span> requests
+                                        </p>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-primary" id="editClientBtn">Edit Details</button>
+                                            <button class="btn btn-success" id="addPaymentBtn">Update Usage Limit</button>
+                                            <button class="btn btn-info" id="reportBtn">Download Report</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Edit Client Modal -->
-        <div class="modal fade" id="editClientModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Client</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editClientForm">
-                            <input type="hidden" name="clientId">
-                            <div class="mb-3">
-                                <label class="form-label">Name</label>
-                                <input type="text" class="form-control" name="name" required>
+
+                <!-- Payments Section -->
+                <div id="payments" class="content-section">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <!-- Active Payment Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">Current Active Payment</h5>
+                                    </div>
+                                    <div class="card-body" id="activePaymentSection">
+                                        <div class="alert alert-info" role="alert">
+                                            Loading active payment information...
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" required>
+                        </div>
+
+                        <!-- Payment Timeline -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <h5 class="card-header">Payment Timeline</h5>
+                                    <div class="card-body">
+                                        <ul class="timeline mb-0" id="paymentTimeline">
+                                            <!-- Timeline items will be inserted here -->
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
-                        </form>
+                        </div>
+
+                        <!-- Payment History Table -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Payment History</h5>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Amount</th>
+                                                    <th>Unit Price</th>
+                                                    <th>Total Requests</th>
+                                                    <th>Used</th>
+                                                    <th>Remaining</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="paymentsTableBody">
+                                                <!-- Payments will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="modal-footer gap-3">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="saveClientEdit">Save</button>
+                </div>
+
+                <!-- Analytics Section -->
+                <div id="analytics" class="content-section">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <h2>Analytics</h2>
+                        <p>Usage analytics and reporting coming soon...</p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Report Filter Modal -->
-        <div class="modal fade" id="reportFilterModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Download Usage Report</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="reportFilterForm">
-                            <input type="hidden" name="clientCreatedAt" id="clientCreatedAt">
-                            <div class="mb-3">
-                                <label class="form-label">Time Range</label>
-                                <select class="form-select" id="timeRangeSelect">
-                                    <option value="thisMonth">This Month</option>
-                                    <option value="allTime">All Time</option>
-                                    <option value="custom">Custom Range</option>
-                                </select>
-                            </div>
-
-                            <div id="customDateRange" style="display: none;">
-                                <div class="mb-3">
-                                    <label class="form-label">From</label>
-                                    <input type="datetime-local" class="form-control" id="startDate">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">To</label>
-                                    <input type="datetime-local" class="form-control" id="endDate">
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer gap-3">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="downloadReport()">Download</button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Add Payment Modal -->
-        <div class="modal fade" id="addPaymentModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Add Payment</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editLimitForm">
-                            <input type="hidden" name="clientId">
-                            <div class="mb-3">
-                                <label class="form-label">Additional Payment Amount</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" name="additionalAmount" required
-                                        min="0.01" step="0.01">
-                                    <button class="btn btn-outline-success" type="button" id="btnPaymentPreview">
-                                        Calculate
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Additional Requests Available</label>
-                                <p class="form-text" id="paymentPreview">Enter amount to see additional requests</p>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer gap-3">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="saveNewLimit">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
+        <!-- Add Client Modal -->
+    <div class="modal fade" id="initialClientModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New API Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newClientForm">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount Paid</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="amountPaid" required min="1"
+                                    step="1">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Price per Request</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="unitPrice" required min="0.01"
+                                    step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="txtUsagePreview" readonly 
+                                    placeholder="Available Requests">
+                                <button class="btn btn-outline-success" type="button" id="btnUsagePreview">
+                                    Calculate available requests
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer gap-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveNewClient">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div class="modal fade" id="editClientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editClientForm">
+                        <input type="hidden" name="clientId">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer gap-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveClientEdit">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Filter Modal -->
+    <div class="modal fade" id="reportFilterModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Download Usage Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportFilterForm">
+                        <input type="hidden" name="clientCreatedAt" id="clientCreatedAt">
+                        <div class="mb-3">
+                            <label class="form-label">Time Range</label>
+                            <select class="form-select" id="timeRangeSelect">
+                                <option value="thisMonth">This Month</option>
+                                <option value="allTime">All Time</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+
+                        <div id="customDateRange" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">From</label>
+                                <input type="datetime-local" class="form-control" id="startDate">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">To</label>
+                                <input type="datetime-local" class="form-control" id="endDate">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer gap-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadReport()">Download</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add Payment Modal -->
+    <div class="modal fade" id="addPaymentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editLimitForm">
+                        <input type="hidden" name="clientId">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="additionalAmount" required
+                                    min="0.01" step="0.01">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Unit Price </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="unitPrice"
+                                       min="0.01" step="0.01">
+                                <button class="btn btn-outline-success" type="button" id="btnPaymentPreview">
+                                    Calculate
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Additional Requests Available</label>
+                            <p class="form-text" id="paymentPreview">Enter amount to see additional requests</p>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer gap-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveNewLimit">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="js/bootstrap.js"></script>
     <script src="js/chart.js"></script>
@@ -221,8 +327,130 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadClient();
+            await loadPayments();
             setupEventListeners();
         });
+
+        async function loadPayments() {
+            try {
+                const response = await fetch('/api/usgm/payments');
+                const payments = await response.json();
+
+                console.log(payments)
+                
+                // Find active payment (first payment with remaining requests)
+                const activePayment = payments.find(p => p.remainingRequests > 0);
+                const activePaymentSection = document.getElementById('activePaymentSection');
+                
+                if (activePayment) {
+                    const usagePercentage = ((activePayment.usedRequests / activePayment.totalRequests) * 100).toFixed(1);
+                    activePaymentSection.innerHTML = `
+                        <div class="row g-4 mt-3">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded h-100">
+                                    <h6 class="fw-bold mb-4">Payment Details</h6>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted">Amount:</span>
+                                            <span class="fw-semibold">$${activePayment.amount.toFixed(2)}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted">Date:</span>
+                                            <span class="fw-semibold">${new Date(activePayment.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Unit Price:</span>
+                                            <span class="fw-semibold">$${activePayment.unitPrice.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded h-100">
+                                    <h6 class="fw-bold mb-4">Usage Statistics</h6>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted">Total Requests:</span>
+                                            <span class="fw-semibold">${activePayment.totalRequests.toLocaleString()}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted">Used:</span>
+                                            <span class="fw-semibold">${activePayment.usedRequests.toLocaleString()}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="text-muted">Remaining:</span>
+                                            <span class="fw-semibold">${activePayment.remainingRequests.toLocaleString()}</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 style="width: ${usagePercentage}%;" 
+                                                 aria-valuenow="${usagePercentage}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                ${usagePercentage}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    activePaymentSection.innerHTML = `
+                        <div class="alert alert-warning" role="alert">
+                            No active payment found. Please add a new payment to continue using the API.
+                        </div>
+                    `;
+                }
+                
+                // Update timeline view
+                const timeline = document.getElementById('paymentTimeline');
+                timeline.innerHTML = payments.map((payment, index) => {
+                    const date = new Date(payment.createdAt);
+                    const timeAgo = getTimeAgo(date);
+                    const isActive = payment.remainingRequests > 0;
+                    return `
+                        <li class="timeline-item timeline-item-transparent">
+                            <span class="timeline-point timeline-point-${isActive ? 'success' : 'secondary'}"></span>
+                            <div class="timeline-event">
+                                <div class="timeline-header mb-3">
+                                    <h6 class="mb-0">Payment of ${payment.amount.toFixed(2)}</h6>
+                                    <small class="text-muted">${timeAgo}</small>
+                                </div>
+                                <p class="mb-2">
+                                    ${payment.totalRequests.toLocaleString()} requests at ${payment.unitPrice.toFixed(2)} per request
+                                </p>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="badge ${isActive ? 'bg-success' : 'bg-secondary'} rounded">
+                                        ${isActive ? 'Active' : 'Depleted'} - ${payment.usedRequests.toLocaleString()} used
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+
+                // Display payment history table
+                const tableBody = document.getElementById('paymentsTableBody');
+                tableBody.innerHTML = payments.map(payment => `
+                    <tr>
+                        <td>${new Date(payment.createdAt).toLocaleDateString()}</td>
+                        <td>${payment.amount.toFixed(2)}</td>
+                        <td>${payment.unitPrice?.toFixed(2) || 'N/A'}</td>
+                        <td>${payment.totalRequests.toLocaleString()}</td>
+                        <td>${payment.usedRequests.toLocaleString()}</td>
+                        <td>${payment.remainingRequests.toLocaleString()}</td>
+                        <td>
+                            <span class="badge bg-${payment.remainingRequests > 0 ? 'success' : 'secondary'}">
+                                ${payment.remainingRequests > 0 ? 'Active' : 'Depleted'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading payments:', error);
+            }
+        }
 
         let clientData;
 
@@ -237,12 +465,13 @@
 
                 clientData = await response.json();
                 const usage = await getClientUsage();
+                console.log(usage);
+                console.log(clientData);
 
-                // Update client card
                 document.getElementById('clientName').textContent = clientData.name;
                 document.getElementById('clientEmail').textContent = clientData.email;
-                document.getElementById('clientUsage').textContent = usage;
-                document.getElementById('clientLimit').textContent = clientData.usageLimit;
+                document.getElementById('clientUsage').textContent = usage.usedRequests;
+                document.getElementById('clientLimit').textContent = usage.totalRequests;
 
                 document.getElementById('client-card').style.display = 'block';
 
@@ -252,25 +481,16 @@
         }
 
         function setupEventListeners() {
-            // Only attach modal handlers if client exists
-            if (document.getElementById('client-card').style.display !== 'none') {
-                attachModalHandlers();
-            }
-            
-            // These should always be attached
+            attachModalHandlers();
             attachPreviewHandlers();
             attachFormHandlers();
         }
 
         function attachModalHandlers() {
             // Get buttons by ID and attach listeners
-            const editBtn = document.getElementById('editClientBtn');
-            const paymentBtn = document.getElementById('addPaymentBtn');
-            const reportBtn = document.getElementById('reportBtn');
-
-            if (editBtn) editBtn.addEventListener('click', showEditClientModal);
-            if (paymentBtn) paymentBtn.addEventListener('click', showAddPaymentModal);
-            if (reportBtn) reportBtn.addEventListener('click', showReportModal);
+            document.getElementById('editClientBtn')?.addEventListener('click', showEditClientModal);
+            document.getElementById('addPaymentBtn')?.addEventListener('click', showAddPaymentModal);
+            document.getElementById('reportBtn')?.addEventListener('click', showReportModal);
         }
 
         function attachPreviewHandlers() {
@@ -288,18 +508,18 @@
                 }
             });
 
-            document.getElementById('btnPaymentPreview').addEventListener('click', () => {
-                const additionalAmount = parseFloat(document.querySelector('input[name="additionalAmount"]').value);
-                const preview = document.getElementById('paymentPreview');
-                const unitPrice = clientData.unitPrice; // Using global clientData
+            // document.getElementById('btnPaymentPreview').addEventListener('click', () => {
+            //     const additionalAmount = parseFloat(document.querySelector('input[name="additionalAmount"]').value);
+            //     const preview = document.getElementById('paymentPreview');
+            //     const unitPrice = clientData.unitPrice; // Using global clientData
 
-                if (additionalAmount && unitPrice) {
-                    const additionalRequests = Math.floor(additionalAmount / unitPrice);
-                    preview.textContent = `${additionalRequests.toLocaleString()} additional requests`;
-                } else {
-                    preview.textContent = 'Enter amount to see additional requests';
-                }
-            });
+            //     if (additionalAmount && unitPrice) {
+            //         const additionalRequests = Math.floor(additionalAmount / unitPrice);
+            //         preview.textContent = `${additionalRequests.toLocaleString()} additional requests`;
+            //     } else {
+            //         preview.textContent = 'Enter amount to see additional requests';
+            //     }
+            // });
 
             // Auto-calculate on input changes
             ['amountPaid', 'unitPrice'].forEach(field => {
@@ -381,13 +601,15 @@
             const form = document.getElementById('editLimitForm');
             const formData = new FormData(form);
             const additionalAmount = parseFloat(formData.get('additionalAmount'));
+            const unitPrice = parseFloat(formData.get('unitPrice'));
             
             try {
                 const response = await fetch('/api/usgm/client/payment', {
                     method: 'PATCH', 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        additionalAmount: additionalAmount
+                        additionalAmount: additionalAmount,
+                        unitPrice : unitPrice
                     })
                 });
 
@@ -409,7 +631,7 @@
             try {
                 const response = await fetch(`/api/usgm/client/usage`);
                 const usage = await response.json();
-                return usage.count;
+                return usage;
             } catch (error) {
                 console.error('Error getting usage:', error);
                 return '?';
@@ -486,6 +708,57 @@
             window.location.href = `/api/usgm/client/report?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
             bootstrap.Modal.getInstance(document.getElementById('reportFilterModal')).hide();
         }
+    
+          // Add new sidebar navigation logic
+        document.querySelectorAll('.menu-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                
+                // Update active menu item
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                link.parentElement.classList.add('active');
+                
+                // Show selected section
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(section).classList.add('active');
+            });
+        });
+
+        // Mobile menu toggle
+        document.querySelector('.layout-menu-toggle').addEventListener('click', () => {
+            document.querySelector('.layout-menu').classList.toggle('show');
+        });
+    
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            let interval = Math.floor(seconds / 31536000);
+            if (interval > 1) return interval + ' years ago';
+            if (interval === 1) return 'a year ago';
+            
+            interval = Math.floor(seconds / 2592000);
+            if (interval > 1) return interval + ' months ago';
+            if (interval === 1) return 'a month ago';
+            
+            interval = Math.floor(seconds / 86400);
+            if (interval > 1) return interval + ' days ago';
+            if (interval === 1) return 'a day ago';
+            
+            interval = Math.floor(seconds / 3600);
+            if (interval > 1) return interval + ' hours ago';
+            if (interval === 1) return 'an hour ago';
+            
+            interval = Math.floor(seconds / 60);
+            if (interval > 1) return interval + ' minutes ago';
+            if (interval === 1) return 'a minute ago';
+            
+            return 'just now';
+        }
     </script>
 </body>
 
@@ -496,5 +769,97 @@
         height: 100%;
         margin: 0;
         padding: 0;
+    }
+
+    .layout-wrapper {
+
+        min-height: 100vh;
+    }
+
+    .layout-menu {
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid rgba(0,0,0,.05);
+        padding: 1rem;
+    }
+
+    .layout-page {
+        flex-grow: 1;
+    }
+
+    .menu-inner {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .menu-item {
+        margin-bottom: .5rem;
+    }
+
+    .menu-link {
+        display: flex;
+        align-items: center;
+        padding: .625rem 1rem;
+        color: #697a8d;
+        border-radius: .375rem;
+        text-decoration: none;
+        transition: all .2s ease-in-out;
+    }
+
+    .menu-link:hover {
+        background: rgba(105,108,255,.16);
+        color: #696cff;
+    }
+
+    .menu-item.active .menu-link {
+        background: rgba(105,108,255,.16);
+        color: #696cff;
+        font-weight: 600;
+    }
+
+    .menu-icon {
+        margin-right: .5rem;
+        font-size: 1.25rem;
+    }
+
+    .content-section {
+        display: none;
+        padding: 1.5rem;
+    }
+
+    .content-section.active {
+        display: block;
+    }
+
+    .container-p-y {
+        padding: 1.5rem 0;
+    }
+
+    .app-brand {
+        padding: 0 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .app-brand-link {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: #696cff;
+    }
+
+    @media (max-width: 1199.98px) {
+        .layout-menu {
+            position: fixed;
+            top: 0;
+            left: -200px;
+            height: 100vh;
+            z-index: 1050;
+            transition: left .2s ease-in-out;
+        }
+
+        .layout-menu.show {
+            left: 0;
+        }
     }
 </style>

@@ -7,16 +7,16 @@ namespace UsageMonitor.Core.Services;
 
 public interface IUsageMonitorService
 {
-    Task LogRequestAsync(RequestLog log);
+
     Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetPaginatedLogsAsync(DateTime? from = null, DateTime? to = null, int page = 1, int pageSize = 20);
     Task<IEnumerable<RequestLog>> GetLogsAsync(DateTime from, DateTime to);
     Task<IEnumerable<RequestLog>> GetErrorLogsAsync(DateTime? from = null, DateTime? to = null);
     Task<ApiClient> GetApiClientAsync();
-    Task<ApiClient> CreateApiClientAsync(ApiClient client);
-    Task<bool> AddClientPaymentAsync(decimal additionalAmount);
+    Task<ApiClient> CreateApiClientAsync(CreateNewClient client);
+    Task<bool> AddClientPaymentAsync(decimal additionalAmount, decimal unitPrice);
     Task<bool> ValidateAdminLoginAsync(string username, string password);
     Task<bool> SetupAdminAccountAsync(string username, string password);
-    Task<int> GetTotalRequestCountAsync();
+    Task<ClientUsageStats> GetClientUsageAsync();
     Task<bool> UpdateClientAsync(ApiClient updatedClient);
     Task<bool> HasAdminAccountAsync();
     Task<Dictionary<string, int>> GetMonthlyUsageAsync();
@@ -33,12 +33,6 @@ public class UsageMonitorService : IUsageMonitorService
     public UsageMonitorService(UsageMonitorDbContext context)
     {
         _context = context;
-    }
-
-    public async Task LogRequestAsync(RequestLog log)
-    {
-        await _context.RequestLogs.AddAsync(log);
-        await _context.SaveChangesAsync();
     }
 
     public async Task<(IEnumerable<RequestLog> Logs, int TotalCount)> GetPaginatedLogsAsync(
@@ -78,21 +72,58 @@ public class UsageMonitorService : IUsageMonitorService
         return await query.OrderByDescending(x => x.RequestTime).ToListAsync();
     }
 
-    public async Task<int> GetTotalRequestCountAsync()
+    public async Task<ClientUsageStats> GetClientUsageAsync()
     {
-        var client = await _context.ApiClients.FirstOrDefaultAsync();
-        return await _context.RequestLogs.Where(rq => rq.RequestTime >= client.UsageCycle)
-            .CountAsync();
+        var payments = await _context.Payments.Select(p => new PaymentUsageStats
+        {
+            TotalRequests = p.TotalRequests,
+            UsedRequests = p.UsedRequests,
+            RemainingRequests = p.RemainingRequests,
+        }).ToListAsync();
+
+        var usage = new ClientUsageStats
+        {
+            TotalRequests = payments.Sum(x => x.TotalRequests),
+            UsedRequests = payments.Sum(x => x.UsedRequests),
+            RemainingRequests = payments.Sum(x => x.RemainingRequests)
+        };
+
+        return usage;
+
     }
 
-    public async Task<ApiClient> CreateApiClientAsync(ApiClient client)
+    public async Task<ApiClient> CreateApiClientAsync(CreateNewClient clientData)
     {
-        client.CreatedAt = DateTime.UtcNow;
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var newClient = new ApiClient
+            {
+                CreatedAt = DateTime.UtcNow,
+                Email = clientData.Email,
+                Name = clientData.Name,
+                Payments = new List<Payment>
+                {
+                    new Payment
+                    {
+                        Amount = clientData.AmountPaid,
+                        UnitPrice = clientData.UnitPrice,
+                        CreatedAt = DateTime.UtcNow
+                    }
+                }
+            };
 
-        await _context.ApiClients.AddAsync(client);
-        await _context.SaveChangesAsync();
+            await _context.ApiClients.AddAsync(newClient);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-        return client;
+            return newClient;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<ApiClient> GetApiClientAsync()
@@ -133,13 +164,20 @@ public class UsageMonitorService : IUsageMonitorService
         return await _context.Admins.AnyAsync();
     }
 
-    public async Task<bool> AddClientPaymentAsync(decimal additionalAmount)
+    public async Task<bool> AddClientPaymentAsync(decimal additionalAmount, decimal unitPrice)
     {
         var client = await _context.ApiClients.FirstOrDefaultAsync();
         if (client == null) return false;
 
-        client.AmountPaid += additionalAmount;
-        client.UsageCycle = DateTime.UtcNow;
+        var payment = new Payment
+        {
+            Amount = additionalAmount,
+            ApiClientId = client.Id,
+            UnitPrice = unitPrice,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.Payments.AddAsync(payment);
 
         await _context.SaveChangesAsync();
         return true;
@@ -177,28 +215,28 @@ public class UsageMonitorService : IUsageMonitorService
             .ToListAsync();
     }
 
+
+
     public async Task<bool> LogRequestAsync(RequestLog log)
     {
         var client = await _context.ApiClients
             .Include(c => c.Payments)
             .FirstOrDefaultAsync();
-            
+
         if (client == null) return false;
 
-        // Find the first payment that still has available requests
         var activePayment = client.Payments?
             .OrderBy(p => p.CreatedAt)
             .FirstOrDefault(p => !p.IsFullyUtilized);
 
         if (activePayment == null) return false;
 
-        // Assign the request to this payment and increment its usage
         log.PaymentId = activePayment.Id;
         activePayment.UsedRequests++;
 
         _context.RequestLogs.Add(log);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
 
@@ -223,21 +261,20 @@ public class UsageMonitorService : IUsageMonitorService
 
     public async Task<IEnumerable<PaymentUsageStats>> GetAllPaymentStatsAsync()
     {
-        var client = await _context.ApiClients
-            .Include(c => c.Payments)
-            .FirstOrDefaultAsync();
-
-        if (client?.Payments == null) return Enumerable.Empty<PaymentUsageStats>();
-
-        return client.Payments.Select(p => new PaymentUsageStats
+        var payments = await _context.Payments.Select(p => new PaymentUsageStats
         {
             PaymentId = p.Id,
             Amount = p.Amount,
             TotalRequests = p.TotalRequests,
             UsedRequests = p.UsedRequests,
+            UnitPrice = p.UnitPrice,
             RemainingRequests = p.RemainingRequests,
             CreatedAt = p.CreatedAt
-        });
+        }).ToListAsync();
+
+        if (payments == null) return Enumerable.Empty<PaymentUsageStats>();
+
+        return payments;
     }
 }
 
@@ -248,5 +285,24 @@ public class PaymentUsageStats
     public int TotalRequests { get; set; }
     public int UsedRequests { get; set; }
     public int RemainingRequests { get; set; }
+    public decimal UnitPrice { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class ClientUsageStats
+{
+    public int TotalRequests { get; set; }
+    public int UsedRequests { get; set; }
+    public int RemainingRequests { get; set; }
+}
+
+public class CreateNewClient
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+
+    public decimal AmountPaid { get; set; }
+    public decimal UnitPrice { get; set; }
+
+
 }

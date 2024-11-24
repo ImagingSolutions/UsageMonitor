@@ -4,7 +4,7 @@ using UsageMonitor.Core.Models;
 
 namespace UsageMonitor.Core.Data;
 
-public class UsageMonitorDbContext : DbContext, IUsageMonitorDbContext
+public class UsageMonitorDbContext : DbContext
 {
     public DbSet<Admin> Admins { get; set; } = null!;
     public DbSet<ApiClient> ApiClients { get; set; } = null!;

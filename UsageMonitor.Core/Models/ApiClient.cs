@@ -1,6 +1,6 @@
 namespace UsageMonitor.Core.Models;
 
-public record UpdatePaymentRequest(decimal AdditionalAmount);
+public record UpdatePaymentRequest(decimal AdditionalAmount, decimal unitPrice);
 
 public class ApiClient
 {

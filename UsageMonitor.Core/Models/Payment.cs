@@ -1,3 +1,4 @@
+namespace UsageMonitor.Core.Models;
 public class Payment
 {
     public int Id { get; set; }
@@ -10,7 +11,6 @@ public class Payment
     public DateTime CreatedAt { get; set; }
     public bool IsFullyUtilized => UsedRequests >= TotalRequests;
     
-    // Navigation property
     public ApiClient? ApiClient { get; set; }
     public ICollection<RequestLog>? Requests { get; set; }
 } 
