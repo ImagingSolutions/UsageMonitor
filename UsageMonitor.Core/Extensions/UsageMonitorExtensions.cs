@@ -143,6 +143,70 @@ public static class UsageMonitorExtensions
             return Results.Ok(stats);
         }).ExcludeFromDescription();
 
+        // Analytics Overview
+        group.MapGet("/analytics/overview", async (IUsageMonitorService service) =>
+        {
+            var overview = await service.GetAnalyticsOverviewAsync();
+            return Results.Ok(overview);
+        }).ExcludeFromDescription();
+
+        // Timeline Stats
+        group.MapGet("/analytics/timeline", async (
+            IUsageMonitorService service,
+            [FromQuery] int days = 30) =>
+        {
+            var timeline = await service.GetTimelineStatsAsync(days);
+            return Results.Ok(timeline);
+        }).ExcludeFromDescription();
+
+        // Top Endpoints
+        group.MapGet("/analytics/top-endpoints", async (
+            IUsageMonitorService service,
+            [FromQuery] int limit = 10) =>
+        {
+            var endpoints = await service.GetTopEndpointsAsync(limit);
+            return Results.Ok(endpoints);
+        }).ExcludeFromDescription();
+
+        // Response Time Stats
+        group.MapGet("/analytics/response-times", async (
+            IUsageMonitorService service,
+            [FromQuery] int days = 30) =>
+        {
+            var stats = await service.GetResponseTimeStatsAsync(days);
+            return Results.Ok(stats);
+        }).ExcludeFromDescription();
+
+        // Status Distribution
+        group.MapGet("/analytics/status-distribution", async (
+            IUsageMonitorService service,
+            [FromQuery] int days = 30) =>
+        {
+            var overview = await service.GetAnalyticsOverviewAsync();
+            return Results.Ok(new
+            {
+                status2xx = overview.Status2xx,
+                status4xx = overview.Status4xx,
+                status5xx = overview.Status5xx
+            });
+        }).ExcludeFromDescription();
+
+        group.MapGet("/reports/usage", async (
+            IReportGenerationService reportService,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] bool detailed = false) =>
+        {
+            var pdfBytes = detailed 
+                ? await reportService.GenerateClientUsageReportAsync(startDate, endDate, true)
+                : await reportService.GenerateUsageSummaryReportAsync(startDate, endDate);
+
+            return Results.File(
+                pdfBytes,
+                "application/pdf",
+                $"usage-report-{(detailed ? "detailed" : "summary")}-{DateTime.Now:yyyyMMdd}.pdf");
+        }).ExcludeFromDescription();
+
         return endpoints;
     }
 

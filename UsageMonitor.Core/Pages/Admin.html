@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="css/core.css">
     <link rel="stylesheet" href="css/theme.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="js/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 
 <body>
@@ -82,7 +84,7 @@
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0">Current Active Payment</h5>
+                                        <h5 class="mb-0 text-white fw-bold">Current Active Payment</h5>
                                     </div>
                                     <div class="card-body" id="activePaymentSection">
                                         <div class="alert alert-info" role="alert">
@@ -141,8 +143,134 @@
                 <!-- Analytics Section -->
                 <div id="analytics" class="content-section">
                     <div class="container-xxl flex-grow-1 container-p-y">
-                        <h2>Analytics</h2>
-                        <p>Usage analytics and reporting coming soon...</p>
+                        <div class="row mb-4">
+                            <h2>Usage Analytics</h2>
+                        </div>
+
+                        <!-- Usage Overview Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start justify-content-between">
+                                            <div class="content-left">
+                                                <span class="fw-bold fs-4 mb-2" id="totalRequestsCount">0</span>
+                                                <p class="mb-0">Total Requests</p>
+                                            </div>
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded bg-label-primary">
+                                                    <i class="bx bx-transfer text-primary"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start justify-content-between">
+                                            <div class="content-left">
+                                                <span class="fw-bold fs-4 mb-2" id="successRate">0%</span>
+                                                <p class="mb-0">Success Rate</p>
+                                            </div>
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded bg-label-success">
+                                                    <i class="bx bx-check-circle text-success"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start justify-content-between">
+                                            <div class="content-left">
+                                                <span class="fw-bold fs-4 mb-2" id="avgResponseTime">0ms</span>
+                                                <p class="mb-0">Avg Response Time</p>
+                                            </div>
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded bg-label-info">
+                                                    <i class="bx bx-time text-info"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start justify-content-between">
+                                            <div class="content-left">
+                                                <span class="fw-bold fs-4 mb-2" id="errorRate">0%</span>
+                                                <p class="mb-0">Error Rate</p>
+                                            </div>
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded bg-label-danger">
+                                                    <i class="bx bx-error-circle text-danger"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Daily Request Volume</h5>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-primary active" data-range="7">7D</button>
+                                            <button class="btn btn-sm btn-outline-primary" data-range="30">30D</button>
+                                            <button class="btn btn-sm btn-outline-primary" data-range="90">90D</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="requestVolumeChart" height="300"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Response Status Distribution</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="statusDistributionChart" height="300"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Charts Row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Top Endpoints</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="topEndpointsChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Response Time Trend</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="responseTimeChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -289,16 +417,16 @@
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
                                 <input type="number" class="form-control" name="additionalAmount" required
-                                    min="0.01" step="0.01">
+                                    min="0.01" step="0.01" id="newPaymentAmount">
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Unit Price </label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="unitPrice"
-                                       min="0.01" step="0.01">
-                                <button class="btn btn-outline-success" type="button" id="btnPaymentPreview">
+                                <input type="number" class="form-control" name="paymentUnitPrice"
+                                       min="0.01" step="0.01" id="newPaymentUnitPrice">
+                                <button class="btn btn-outline-success" type="button" id="calculateNewPayment">
                                     Calculate
                                 </button>
                             </div>
@@ -306,13 +434,14 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Additional Requests Available</label>
-                            <p class="form-text" id="paymentPreview">Enter amount to see additional requests</p>
+                            <input type="text" class="form-control" id="newPaymentPreview" readonly
+                                placeholder="Enter amount and price to see available requests">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer gap-3">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveNewLimit">Save</button>
+                    <button type="button" class="btn btn-primary" id="saveNewPayment">Add Payment</button>
                 </div>
             </div>
         </div>
@@ -494,50 +623,66 @@
         }
 
         function attachPreviewHandlers() {
-            // Fix preview calculations
+            // Initial client preview calculation
             document.getElementById('btnUsagePreview').addEventListener('click', () => {
-                const amountPaid = parseFloat(document.querySelector('input[name="amountPaid"]').value);
-                const unitPrice = parseFloat(document.querySelector('input[name="unitPrice"]').value);
-                const preview = document.getElementById('txtUsagePreview');
-
-                if (amountPaid && unitPrice) {
-                    const requests = Math.floor(amountPaid / unitPrice);
-                    preview.value = `${requests.toLocaleString()} requests available`;
-                } else {
-                    preview.value = 'Enter amount and price to see available requests';
-                }
+                calculateRequestPreview(
+                    'input[name="amountPaid"]',
+                    'input[name="unitPrice"]',
+                    'txtUsagePreview'
+                );
             });
 
-            // document.getElementById('btnPaymentPreview').addEventListener('click', () => {
-            //     const additionalAmount = parseFloat(document.querySelector('input[name="additionalAmount"]').value);
-            //     const preview = document.getElementById('paymentPreview');
-            //     const unitPrice = clientData.unitPrice; // Using global clientData
+            // New payment preview calculation
+            document.getElementById('calculateNewPayment')?.addEventListener('click', () => {
+                calculateRequestPreview(
+                    '#newPaymentAmount',
+                    '#newPaymentUnitPrice',
+                    'newPaymentPreview'
+                );
+            });
 
-            //     if (additionalAmount && unitPrice) {
-            //         const additionalRequests = Math.floor(additionalAmount / unitPrice);
-            //         preview.textContent = `${additionalRequests.toLocaleString()} additional requests`;
-            //     } else {
-            //         preview.textContent = 'Enter amount to see additional requests';
-            //     }
-            // });
-
-            // Auto-calculate on input changes
+            // Auto-calculate on input changes for both forms
             ['amountPaid', 'unitPrice'].forEach(field => {
-                document.querySelector(`input[name="${field}"]`).addEventListener('input', () => {
-                    document.getElementById('btnUsagePreview').click();
+                document.querySelector(`input[name="${field}"]`)?.addEventListener('input', () => {
+                    calculateRequestPreview(
+                        'input[name="amountPaid"]',
+                        'input[name="unitPrice"]',
+                        'txtUsagePreview'
+                    );
                 });
             });
 
-            document.querySelector('input[name="additionalAmount"]').addEventListener('input', () => {
-                document.getElementById('btnPaymentPreview').click();
+            // Auto-calculate on input changes for new payment form
+            ['newPaymentAmount', 'newPaymentUnitPrice'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', () => {
+                    calculateRequestPreview(
+                        '#newPaymentAmount',
+                        '#newPaymentUnitPrice',
+                        'newPaymentPreview'
+                    );
+                });
             });
+        }
+
+        // Helper function to calculate request preview
+        function calculateRequestPreview(amountSelector, priceSelector, outputId) {
+            const amount = parseFloat(document.querySelector(amountSelector)?.value || '0');
+            const unitPrice = parseFloat(document.querySelector(priceSelector)?.value || '0');
+            const preview = document.getElementById(outputId);
+
+            if (amount && unitPrice && unitPrice > 0) {
+                const requests = Math.floor(amount / unitPrice);
+                preview.value = `${requests.toLocaleString()} requests available`;
+            } else {
+                preview.value = 'Enter amount and price to see available requests';
+            }
         }
 
         function attachFormHandlers() {
             // Existing form submission handlers, but cleaned up
             document.getElementById('saveNewClient').addEventListener('click', handleNewClientSubmit);
             document.getElementById('saveClientEdit').addEventListener('click', handleClientEditSubmit);
-            document.getElementById('saveNewLimit').addEventListener('click', handleNewLimitSubmit);
+            document.getElementById('saveNewPayment').addEventListener('click', submitNewPayment);
         }
 
         async function handleNewClientSubmit() {
@@ -597,33 +742,42 @@
             }
         }
 
-        async function handleNewLimitSubmit() {
+        async function submitNewPayment() {
             const form = document.getElementById('editLimitForm');
-            const formData = new FormData(form);
-            const additionalAmount = parseFloat(formData.get('additionalAmount'));
-            const unitPrice = parseFloat(formData.get('unitPrice'));
-            
+            const additionalAmount = parseFloat(document.getElementById('newPaymentAmount').value);
+            const unitPrice = parseFloat(document.getElementById('newPaymentUnitPrice').value);
+
+            if (!additionalAmount || !unitPrice) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
             try {
                 const response = await fetch('/api/usgm/client/payment', {
-                    method: 'PATCH', 
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
-                        additionalAmount: additionalAmount,
-                        unitPrice : unitPrice
+                        additionalAmount,
+                        unitPrice
                     })
                 });
 
-                if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('addPaymentModal')).hide();
-                    form.reset();
-                    await loadClient();
-                } else {
-                    const error = await response.json();
-                    showError(error.message || 'Failed to update payment');
+                if (!response.ok) {
+                    throw new Error('Failed to add payment');
                 }
+
+                // Close modal and refresh data
+                bootstrap.Modal.getInstance(document.getElementById('addPaymentModal')).hide();
+                await loadClientData();
+                await loadPayments();
+                
+                // Show success message
+                showToast('Success', 'Payment added successfully', 'success');
             } catch (error) {
-                console.error('Error updating payment:', error);
-                showError('Failed to update payment');
+                console.error('Error adding payment:', error);
+                showToast('Error', 'Failed to add payment', 'error');
             }
         }
 
@@ -734,31 +888,261 @@
             document.querySelector('.layout-menu').classList.toggle('show');
         });
     
-        function getTimeAgo(date) {
-            const seconds = Math.floor((new Date() - date) / 1000);
+        function getTimeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
             
-            let interval = Math.floor(seconds / 31536000);
-            if (interval > 1) return interval + ' years ago';
-            if (interval === 1) return 'a year ago';
-            
-            interval = Math.floor(seconds / 2592000);
-            if (interval > 1) return interval + ' months ago';
-            if (interval === 1) return 'a month ago';
-            
-            interval = Math.floor(seconds / 86400);
-            if (interval > 1) return interval + ' days ago';
-            if (interval === 1) return 'a day ago';
-            
-            interval = Math.floor(seconds / 3600);
-            if (interval > 1) return interval + ' hours ago';
-            if (interval === 1) return 'an hour ago';
-            
-            interval = Math.floor(seconds / 60);
-            if (interval > 1) return interval + ' minutes ago';
-            if (interval === 1) return 'a minute ago';
-            
-            return 'just now';
+            // Handle "just now" more precisely (within 30 seconds)
+            if (seconds < 30) {
+                return 'just now';
+            }
+
+            // Less than a minute
+            if (seconds < 60) {
+                return `${seconds} seconds ago`;
+            }
+
+            // Minutes
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) {
+                return minutes === 1 ? 'a minute ago' : `${minutes} minutes ago`;
+            }
+
+            // Hours
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) {
+                return hours === 1 ? 'an hour ago' : `${hours} hours ago`;
+            }
+
+            // Days
+            const days = Math.floor(hours / 24);
+            if (days < 30) {
+                return days === 1 ? 'yesterday' : `${days} days ago`;
+            }
+
+            // Months
+            const months = Math.floor(days / 30);
+            if (months < 12) {
+                return months === 1 ? 'a month ago' : `${months} months ago`;
+            }
+
+            // Years
+            const years = Math.floor(months / 12);
+            return years === 1 ? 'a year ago' : `${years} years ago`;
         }
+
+        async function loadAnalytics() {
+            try {
+                const [overviewResponse, timelineResponse, endpointsResponse, responseTimesResponse] = await Promise.all([
+                    fetch('/api/usgm/analytics/overview'),
+                    fetch('/api/usgm/analytics/timeline'),
+                    fetch('/api/usgm/analytics/top-endpoints'),
+                    fetch('/api/usgm/analytics/response-times')
+                ]);
+
+                const overview = await overviewResponse.json();
+                const timeline = await timelineResponse.json();
+                const endpoints = await endpointsResponse.json();
+                const responseTimes = await responseTimesResponse.json();
+
+                updateOverviewCards(overview);
+                initializeCharts(overview, timeline, endpoints, responseTimes);
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showToast('Error', 'Failed to load analytics data', 'error');
+            }
+        }
+
+        function updateOverviewCards(stats) {
+            document.getElementById('totalRequestsCount').textContent = stats.totalRequests.toLocaleString();
+            document.getElementById('successRate').textContent = `${stats.successRate.toFixed(1)}%`;
+            document.getElementById('avgResponseTime').textContent = `${stats.avgResponseTime.toFixed(0)}ms`;
+            document.getElementById('errorRate').textContent = `${stats.errorRate.toFixed(1)}%`;
+        }
+
+        function initializeCharts(stats, timeline, endpoints, responseTimes) {
+            // Request Volume Chart
+            new Chart(document.getElementById('requestVolumeChart'), {
+                type: 'line',
+                data: {
+                    labels: timeline.dates,
+                    datasets: [{
+                        label: 'Requests',
+                        data: timeline.counts,
+                        borderColor: '#696cff',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(105, 108, 255, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                borderDash: [2]
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Status Distribution Chart
+            new Chart(document.getElementById('statusDistributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['2xx', '4xx', '5xx'],
+                    datasets: [{
+                        data: [stats.status2xx, stats.status4xx, stats.status5xx],
+                        backgroundColor: ['#71dd37', '#ff3e1d', '#8592a3']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Top Endpoints Chart
+            new Chart(document.getElementById('topEndpointsChart'), {
+                type: 'bar',
+                data: {
+                    labels: endpoints.map(e => e.path),
+                    datasets: [{
+                        label: 'Requests',
+                        data: endpoints.map(e => e.requestCount),
+                        backgroundColor: '#696cff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Response Time Trend Chart
+            new Chart(document.getElementById('responseTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: responseTimes.dates,
+                    datasets: [{
+                        label: 'Avg Response Time (ms)',
+                        data: responseTimes.avgTimes,
+                        borderColor: '#03c3ec',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(3, 195, 236, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                borderDash: [2]
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add event listeners for date range buttons
+        document.querySelectorAll('[data-range]').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                // Remove active class from all buttons
+                document.querySelectorAll('[data-range]').forEach(btn => 
+                    btn.classList.remove('active'));
+                // Add active class to clicked button
+                e.target.classList.add('active');
+
+                const days = e.target.dataset.range;
+                await loadAnalytics(days);
+            });
+        });
+
+        // Initialize dashboard
+        window.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadClient(),
+                loadPayments(),
+                loadAnalytics()
+            ]);
+
+            // Add navigation handling
+            document.querySelectorAll('.menu-link').forEach(link => {
+                link.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const section = e.currentTarget.getAttribute('data-section');
+                    
+                    // Update active states
+                    document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+                    e.currentTarget.parentElement.classList.add('active');
+                    
+                    // Hide all sections and show the selected one
+                    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(section).classList.add('active');
+
+                    // Reload data when switching to analytics
+                    if (section === 'analytics') {
+                        await loadAnalytics();
+                    }
+                });
+            });
+        });
+
+        // Add periodic refresh for analytics
+        setInterval(async () => {
+            if (document.getElementById('analytics').classList.contains('active')) {
+                await loadAnalytics();
+            }
+        }, 30000); // Refresh every 30 seconds if analytics section is active
     </script>
 </body>
 
@@ -861,5 +1245,43 @@
         .layout-menu.show {
             left: 0;
         }
+    }
+
+    .avatar {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .avatar-initial {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .bg-label-primary {
+        background-color: #e7e7ff !important;
+    }
+
+    .bg-label-success {
+        background-color: #e8fadf !important;
+    }
+
+    .bg-label-info {
+        background-color: #d7f5fc !important;
+    }
+
+    .bg-label-danger {
+        background-color: #ffe0db !important;
+    }
+
+    .card {
+        box-shadow: 0 0.25rem 1rem rgba(161, 172, 184, 0.45);
     }
 </style>

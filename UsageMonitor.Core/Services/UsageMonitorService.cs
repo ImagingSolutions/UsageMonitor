@@ -23,6 +23,11 @@ public interface IUsageMonitorService
     Task<bool> LogRequestAsync(RequestLog log);
     Task<PaymentUsageStats> GetPaymentUsageStatsAsync(int paymentId);
     Task<IEnumerable<PaymentUsageStats>> GetAllPaymentStatsAsync();
+    Task<bool> HasAvailableRequestsAsync();
+    Task<AnalyticsOverview> GetAnalyticsOverviewAsync();
+    Task<TimelineStats> GetTimelineStatsAsync(int days = 30);
+    Task<IEnumerable<EndpointStats>> GetTopEndpointsAsync(int limit = 10);
+    Task<ResponseTimeStats> GetResponseTimeStatsAsync(int days = 30);
 }
 
 public class UsageMonitorService : IUsageMonitorService
@@ -219,15 +224,10 @@ public class UsageMonitorService : IUsageMonitorService
 
     public async Task<bool> LogRequestAsync(RequestLog log)
     {
-        var client = await _context.ApiClients
-            .Include(c => c.Payments)
-            .FirstOrDefaultAsync();
-
-        if (client == null) return false;
-
-        var activePayment = client.Payments?
+        var activePayment = await _context.Payments
+            .Where(p => p.RemainingRequests > 0)
             .OrderBy(p => p.CreatedAt)
-            .FirstOrDefault(p => !p.IsFullyUtilized);
+            .FirstOrDefaultAsync();
 
         if (activePayment == null) return false;
 
@@ -276,6 +276,110 @@ public class UsageMonitorService : IUsageMonitorService
 
         return payments;
     }
+
+    public async Task<bool> HasAvailableRequestsAsync()
+    {
+        return await _context.Payments
+            .AnyAsync(p => p.RemainingRequests > 0);
+    }
+
+    public async Task<AnalyticsOverview> GetAnalyticsOverviewAsync()
+    {
+        var now = DateTime.UtcNow;
+        var startDate = now.AddDays(-30); // Last 30 days
+
+        var logs = await _context.RequestLogs
+            .Where(l => l.RequestTime >= startDate)
+            .ToListAsync();
+
+        var totalRequests = logs.Count;
+        var successRequests = logs.Count(l => l.StatusCode < 400);
+        var errorRequests = logs.Count(l => l.StatusCode >= 400);
+
+        return new AnalyticsOverview
+        {
+            TotalRequests = totalRequests,
+            SuccessRate = totalRequests > 0 ? (successRequests * 100.0 / totalRequests) : 0,
+            ErrorRate = totalRequests > 0 ? (errorRequests * 100.0 / totalRequests) : 0,
+            AvgResponseTime = logs.Any() ? logs.Average(l => l.Duration * 1000) : 0, // Convert to ms
+            Status2xx = logs.Count(l => l.StatusCode >= 200 && l.StatusCode < 300),
+            Status4xx = logs.Count(l => l.StatusCode >= 400 && l.StatusCode < 500),
+            Status5xx = logs.Count(l => l.StatusCode >= 500)
+        };
+    }
+
+    public async Task<TimelineStats> GetTimelineStatsAsync(int days = 30)
+    {
+        var now = DateTime.UtcNow;
+        var startDate = now.AddDays(-days);
+
+        var dailyCounts = await _context.RequestLogs
+            .Where(l => l.RequestTime >= startDate)
+            .GroupBy(l => l.RequestTime.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Count = g.Count()
+            })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+
+        // Fill in missing dates with zero counts
+        var allDates = Enumerable.Range(0, days)
+            .Select(i => startDate.AddDays(i).Date)
+            .ToList();
+
+        var timeline = allDates.Select(date => new
+        {
+            Date = date,
+            Count = dailyCounts.FirstOrDefault(x => x.Date == date)?.Count ?? 0
+        }).ToList();
+
+        return new TimelineStats
+        {
+            Dates = timeline.Select(x => x.Date.ToString("yyyy-MM-dd")).ToList(),
+            Counts = timeline.Select(x => x.Count).ToList()
+        };
+    }
+
+    public async Task<IEnumerable<EndpointStats>> GetTopEndpointsAsync(int limit = 10)
+    {
+        return await _context.RequestLogs
+            .GroupBy(l => l.Path)
+            .Select(g => new EndpointStats
+            {
+                Path = g.Key,
+                RequestCount = g.Count(),
+                SuccessRate = g.Count(r => r.StatusCode < 400) * 100.0 / g.Count(),
+                AvgResponseTime = g.Average(r => r.Duration * 1000) // Convert to ms
+            })
+            .OrderByDescending(x => x.RequestCount)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<ResponseTimeStats> GetResponseTimeStatsAsync(int days = 30)
+    {
+        var now = DateTime.UtcNow;
+        var startDate = now.AddDays(-days);
+
+        var dailyStats = await _context.RequestLogs
+            .Where(l => l.RequestTime >= startDate)
+            .GroupBy(l => l.RequestTime.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                AvgTime = g.Average(r => r.Duration * 1000) // Convert to ms
+            })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+
+        return new ResponseTimeStats
+        {
+            Dates = dailyStats.Select(x => x.Date.ToString("yyyy-MM-dd")).ToList(),
+            AvgTimes = dailyStats.Select(x => x.AvgTime).ToList()
+        };
+    }
 }
 
 public class PaymentUsageStats
@@ -305,4 +409,35 @@ public class CreateNewClient
     public decimal UnitPrice { get; set; }
 
 
+}
+
+public class AnalyticsOverview
+{
+    public int TotalRequests { get; set; }
+    public double SuccessRate { get; set; }
+    public double ErrorRate { get; set; }
+    public double AvgResponseTime { get; set; }
+    public int Status2xx { get; set; }
+    public int Status4xx { get; set; }
+    public int Status5xx { get; set; }
+}
+
+public class TimelineStats
+{
+    public List<string> Dates { get; set; }
+    public List<int> Counts { get; set; }
+}
+
+public class EndpointStats
+{
+    public string Path { get; set; }
+    public int RequestCount { get; set; }
+    public double SuccessRate { get; set; }
+    public double AvgResponseTime { get; set; }
+}
+
+public class ResponseTimeStats
+{
+    public List<string> Dates { get; set; }
+    public List<double> AvgTimes { get; set; }
 }

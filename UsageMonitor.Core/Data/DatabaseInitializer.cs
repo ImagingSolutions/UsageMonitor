@@ -61,6 +61,13 @@ public class DatabaseInitializer : IDatabaseInitializer
                         Amount DECIMAL(18,2) NOT NULL,
                         UnitPrice DECIMAL(18,2) NOT NULL,
                         UsedRequests INTEGER DEFAULT 0,
+                        TotalRequests INTEGER GENERATED ALWAYS AS (CAST(Amount / UnitPrice AS INTEGER)) STORED,
+                        RemainingRequests INTEGER GENERATED ALWAYS AS (
+                            CAST(Amount / UnitPrice AS INTEGER) - UsedRequests
+                        ) STORED,
+                        IsFullyUtilized INTEGER GENERATED ALWAYS AS (
+                            CASE WHEN UsedRequests >= CAST(Amount / UnitPrice AS INTEGER) THEN 1 ELSE 0 END
+                        ) STORED,
                         CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (ApiClientId) REFERENCES ApiClients(Id) ON DELETE CASCADE
                     );
@@ -104,6 +111,15 @@ public class DatabaseInitializer : IDatabaseInitializer
                         ""Amount"" DECIMAL(18,2) NOT NULL,
                         ""UnitPrice"" DECIMAL(18,2) NOT NULL,
                         ""UsedRequests"" INTEGER DEFAULT 0,
+                        ""TotalRequests"" INTEGER GENERATED ALWAYS AS (
+                            FLOOR(""Amount"" / ""UnitPrice"")::INTEGER
+                        ) STORED,
+                        ""RemainingRequests"" INTEGER GENERATED ALWAYS AS (
+                            FLOOR(""Amount"" / ""UnitPrice"")::INTEGER - ""UsedRequests""
+                        ) STORED,
+                        ""IsFullyUtilized"" BOOLEAN GENERATED ALWAYS AS (
+                            ""UsedRequests"" >= FLOOR(""Amount"" / ""UnitPrice"")::INTEGER
+                        ) STORED,
                         ""CreatedAt"" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         CONSTRAINT ""FK_Payments_ApiClients"" FOREIGN KEY (""ApiClientId"") 
                             REFERENCES ""ApiClients""(""Id"") ON DELETE CASCADE
@@ -155,6 +171,14 @@ public class DatabaseInitializer : IDatabaseInitializer
                             Amount DECIMAL(18,2) NOT NULL,
                             UnitPrice DECIMAL(18,2) NOT NULL,
                             UsedRequests INT DEFAULT 0,
+                            TotalRequests AS CAST(Amount / UnitPrice AS INT) PERSISTED,
+                            RemainingRequests AS (
+                                CAST(Amount / UnitPrice AS INT) - UsedRequests
+                            ) PERSISTED,
+                            IsFullyUtilized AS (
+                                CASE WHEN UsedRequests >= CAST(Amount / UnitPrice AS INT) 
+                                THEN 1 ELSE 0 END
+                            ) PERSISTED,
                             CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
                             CONSTRAINT FK_Payments_ApiClients FOREIGN KEY (ApiClientId) 
                                 REFERENCES ApiClients(Id) ON DELETE CASCADE

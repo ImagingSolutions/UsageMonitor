@@ -39,6 +39,15 @@ public class UsageMonitorDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.UsedRequests).HasDefaultValue(0);
 
+            entity.Property(p => p.TotalRequests)
+                  .HasComputedColumnSql("CAST([Amount] / [UnitPrice] AS int)", stored: true);
+
+            entity.Property(p => p.RemainingRequests)
+                  .HasComputedColumnSql("CAST([Amount] / [UnitPrice] AS int) - [UsedRequests]", stored: true);
+
+            entity.Property<bool>("IsFullyUtilized")
+                  .HasComputedColumnSql("[UsedRequests] >= CAST([Amount] / [UnitPrice] AS int)", stored: true);
+
             // Configure relationship with RequestLogs
             entity.HasMany(e => e.Requests)
                   .WithOne(r => r.Payment)

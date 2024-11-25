@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace UsageMonitor.Core.Models;
 
 public class RequestLog
@@ -12,6 +14,9 @@ public class RequestLog
     public DateTime RequestTime { get; set; }
     
     // Navigation properties
+    [JsonIgnore]
     public ApiClient? ApiClient { get; set; }
+    
+    [JsonIgnore]
     public Payment? Payment { get; set; }
 }

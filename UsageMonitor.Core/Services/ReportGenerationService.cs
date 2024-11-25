@@ -7,7 +7,8 @@ namespace UsageMonitor.Core.Services;
 
 public interface IReportGenerationService
 {
-    Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null);
+    Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null, bool detailed = false);
+    Task<byte[]> GenerateUsageSummaryReportAsync(DateTime? startDate = null, DateTime? endDate = null);
 }
 
 public class ReportGenerationService : IReportGenerationService
@@ -19,7 +20,7 @@ public class ReportGenerationService : IReportGenerationService
         _usageMonitorService = usageMonitorService;
     }
 
-    public async Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<byte[]> GenerateClientUsageReportAsync(DateTime? startDate = null, DateTime? endDate = null, bool detailed = false)
     {
         var client = await _usageMonitorService.GetApiClientAsync();
 
@@ -51,6 +52,30 @@ public class ReportGenerationService : IReportGenerationService
                 page.Margin(2, Unit.Centimetre);
                 page.Header().Element(ComposeHeader);
                 page.Content().Element(content => ComposeContent(content, client, payments, dailyStats, logs, startDate.Value, endDate.Value));
+                page.Footer().Element(ComposeFooter);
+            });
+        }).GeneratePdf();
+    }
+
+    public async Task<byte[]> GenerateUsageSummaryReportAsync(DateTime? startDate = null, DateTime? endDate = null)
+    {
+        var client = await _usageMonitorService.GetApiClientAsync();
+        
+        startDate ??= DateTime.UtcNow.AddMonths(-1);
+        endDate ??= DateTime.UtcNow;
+
+        var payments = await _usageMonitorService.GetAllPaymentStatsAsync();
+        var periodPayments = payments.Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate);
+        
+        QuestPDF.Settings.License = LicenseType.Community;
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.Header().Element(ComposeHeader);
+                page.Content().Element(content => ComposeSummaryContent(content, client, periodPayments, startDate.Value, endDate.Value));
                 page.Footer().Element(ComposeFooter);
             });
         }).GeneratePdf();
@@ -181,6 +206,50 @@ public class ReportGenerationService : IReportGenerationService
                 period.Item().Text($"From: {startDate:yyyy-MM-dd HH:mm:ss}");
                 period.Item().Text($"To: {endDate:yyyy-MM-dd HH:mm:ss}");
             });
+        });
+    }
+
+    private void ComposeSummaryContent(IContainer container, ApiClient client, 
+        IEnumerable<PaymentUsageStats> payments, DateTime startDate, DateTime endDate)
+    {
+        container.Column(column =>
+        {
+            // Client Summary
+            column.Item().Padding(10).Column(summary =>
+            {
+                summary.Item().Text("Usage Summary Report").FontSize(18).SemiBold();
+                summary.Item().PaddingVertical(5).Text($"Period: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
+                summary.Item().Text($"Client: {client.Name}").FontSize(12);
+                summary.Item().Text($"Email: {client.Email}");
+            });
+
+            // Usage Summary
+            column.Item().Padding(10).Column(usage =>
+            {
+                var totalRequests = payments.Sum(p => p.UsedRequests);
+                var totalAmount = payments.Sum(p => p.Amount);
+
+                usage.Item().Text("Usage Overview").FontSize(16).SemiBold();
+                usage.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(cols =>
+                    {
+                        cols.RelativeColumn();
+                        cols.RelativeColumn();
+                    });
+
+                    table.Cell().Text("Total Requests");
+                    table.Cell().Text(totalRequests.ToString("N0"));
+
+                    table.Cell().Text("Total Spent");
+                    table.Cell().Text($"${totalAmount:F2}");
+
+                    table.Cell().Text("Average Cost per Request");
+                    table.Cell().Text($"${(totalRequests > 0 ? totalAmount / totalRequests : 0):F4}");
+                });
+            });
+
+            // Add more summary sections as needed
         });
     }
 

@@ -43,6 +43,18 @@ public class UsageMonitoringMiddlware
             return;
         }
 
+        var hasAvailableRequests = await _usageService.HasAvailableRequestsAsync();
+        if (!hasAvailableRequests)
+        {
+            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "No active payment found or request limit reached. Please add more credits to continue.",
+                details = "Contact administrator to increase your usage limit."
+            });
+            return;
+        }
+
         var log = new RequestLog
         {
             RequestTime = DateTime.UtcNow,
@@ -67,17 +79,8 @@ public class UsageMonitoringMiddlware
         {
             _stopwatch.Stop();
             log.Duration = _stopwatch.Elapsed.TotalSeconds;
-            
-            var success = await _usageService.LogRequestAsync(log);
-            if (!success)
-            {
-                context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
-                await context.Response.WriteAsJsonAsync(new
-                {
-                    error = "No active payment found or all payments are fully utilized",
-                });
-            }
-            
+
+            await _usageService.LogRequestAsync(log);
             _stopwatch.Reset();
         }
     }
