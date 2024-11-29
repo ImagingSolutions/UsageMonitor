@@ -107,15 +107,14 @@ public class UsageMonitorService : IUsageMonitorService
                 CreatedAt = DateTime.UtcNow,
                 Email = clientData.Email,
                 Name = clientData.Name,
-                Payments = new List<Payment>
-                {
-                    new Payment
-                    {
+                Payments =
+                [
+                    new() {
                         Amount = clientData.AmountPaid,
                         UnitPrice = clientData.UnitPrice,
                         CreatedAt = DateTime.UtcNow
                     }
-                }
+                ]
             };
 
             await _context.ApiClients.AddAsync(newClient);

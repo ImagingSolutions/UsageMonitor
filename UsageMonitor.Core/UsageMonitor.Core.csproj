@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>UsageMonitor.Core</PackageId>
-    <Version>1.0.0</Version>
+    <Version>4.0.1</Version>
     <Authors>Manasseh</Authors>
     <Description>API usage monitoring, rate limiting, and analytics capabilities for ASP.NET Core
       applications</Description>
@@ -40,9 +40,20 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Include Pages folder content -->
   <ItemGroup>
     <Content Include="Pages\**\*">
+      <Pack>true</Pack>
+      <PackagePath>Pages</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Ensure content files are copied -->
+  <PropertyGroup>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeContentInPack>true</IncludeContentInPack>
+  </PropertyGroup>
 </Project>

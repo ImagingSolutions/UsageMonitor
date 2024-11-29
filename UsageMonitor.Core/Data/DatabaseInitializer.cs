@@ -25,20 +25,20 @@ public class DatabaseInitializer : IDatabaseInitializer
     {
         _context.Database.EnsureCreated();
 
-        using var command = _context.Database.GetDbConnection().CreateCommand();
-        command.CommandText = GetInitialMigrationScript(_options.DatabaseProvider);
+        // using var command = _context.Database.GetDbConnection().CreateCommand();
+        // command.CommandText = GetInitialMigrationScript(_options.DatabaseProvider);
 
-        if (_context.Database.GetDbConnection().State != System.Data.ConnectionState.Open)
-            _context.Database.GetDbConnection().Open();
+        // if (_context.Database.GetDbConnection().State != System.Data.ConnectionState.Open)
+        //     _context.Database.GetDbConnection().Open();
 
-        try
-        {
-            command.ExecuteNonQuery();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Migration error: {ex.Message}");
-        }
+        // try
+        // {
+        //     command.ExecuteNonQuery();
+        // }
+        // catch (Exception ex)
+        // {
+        //     System.Diagnostics.Debug.WriteLine($"Migration error: {ex.Message}");
+        // }
 
     }
 
@@ -153,74 +153,79 @@ public class DatabaseInitializer : IDatabaseInitializer
 
             case DatabaseProvider.SQLServer:
                 return @"
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ApiClients')
-                    BEGIN
-                        CREATE TABLE ApiClients (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            Name NVARCHAR(255) NOT NULL,
-                            Email NVARCHAR(255) NOT NULL,
-                            CreatedAt DATETIME2 DEFAULT GETUTCDATE()
-                        );
-                    END
+                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ApiClients')
+                BEGIN
+                    CREATE TABLE ApiClients (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        Name NVARCHAR(255) NOT NULL,
+                        Email NVARCHAR(255) NOT NULL,
+                        CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+                    )
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Payments')
-                    BEGIN
-                        CREATE TABLE Payments (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            ApiClientId INT NOT NULL,
-                            Amount DECIMAL(18,2) NOT NULL,
-                            UnitPrice DECIMAL(18,2) NOT NULL,
-                            UsedRequests INT DEFAULT 0,
-                            TotalRequests AS CAST(Amount / UnitPrice AS INT) PERSISTED,
-                            RemainingRequests AS (
-                                CAST(Amount / UnitPrice AS INT) - UsedRequests
-                            ) PERSISTED,
-                            IsFullyUtilized AS (
-                                CASE WHEN UsedRequests >= CAST(Amount / UnitPrice AS INT) 
-                                THEN 1 ELSE 0 END
-                            ) PERSISTED,
-                            CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-                            CONSTRAINT FK_Payments_ApiClients FOREIGN KEY (ApiClientId) 
-                                REFERENCES ApiClients(Id) ON DELETE CASCADE
-                        );
-                    END
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Payments')
+                BEGIN
+                    CREATE TABLE Payments (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        ApiClientId INT NOT NULL,
+                        Amount DECIMAL(18,2) NOT NULL,
+                        UnitPrice DECIMAL(18,2) NOT NULL,
+                        UsedRequests INT DEFAULT 0,
+                        TotalRequests AS CAST(FLOOR(Amount / UnitPrice) AS INT) PERSISTED,
+                        RemainingRequests AS CAST(FLOOR(Amount / UnitPrice) AS INT) - UsedRequests PERSISTED,
+                        IsFullyUtilized AS CASE 
+                            WHEN UsedRequests >= CAST(FLOOR(Amount / UnitPrice) AS INT) THEN 1 
+                            ELSE 0 
+                        END PERSISTED,
+                        CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
+                        CONSTRAINT FK_Payments_ApiClients FOREIGN KEY (ApiClientId) 
+                            REFERENCES ApiClients(Id) ON DELETE CASCADE
+                    )
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RequestLogs')
-                    BEGIN
-                        CREATE TABLE RequestLogs (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            ApiClientId INT NOT NULL,
-                            PaymentId INT,
-                            Path NVARCHAR(MAX) NOT NULL,
-                            Method NVARCHAR(10) NOT NULL,
-                            StatusCode INT NOT NULL,
-                            Duration BIGINT NOT NULL,
-                            RequestTime DATETIME2 DEFAULT GETUTCDATE(),
-                            CONSTRAINT FK_RequestLogs_ApiClients FOREIGN KEY (ApiClientId) 
-                                REFERENCES ApiClients(Id) ON DELETE CASCADE,
-                            CONSTRAINT FK_RequestLogs_Payments FOREIGN KEY (PaymentId) 
-                                REFERENCES Payments(Id) ON DELETE SET NULL
-                        );
-                    END
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RequestLogs')
+                BEGIN
+                    CREATE TABLE RequestLogs (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        ApiClientId INT NOT NULL,
+                        PaymentId INT,
+                        Path NVARCHAR(MAX) NOT NULL,
+                        Method NVARCHAR(10) NOT NULL,
+                        StatusCode INT NOT NULL,
+                        Duration BIGINT NOT NULL,
+                        RequestTime DATETIME2 DEFAULT GETUTCDATE(),
+                        CONSTRAINT FK_RequestLogs_ApiClients FOREIGN KEY (ApiClientId) 
+                            REFERENCES ApiClients(Id) ON DELETE CASCADE,
+                        CONSTRAINT FK_RequestLogs_Payments FOREIGN KEY (PaymentId) 
+                            REFERENCES Payments(Id) ON DELETE SET NULL
+                    )
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Admins')
-                    BEGIN
-                        CREATE TABLE Admins (
-                            Id INT IDENTITY(1,1) PRIMARY KEY,
-                            Username NVARCHAR(450) NOT NULL UNIQUE,
-                            PasswordHash NVARCHAR(MAX) NOT NULL,
-                            CreatedAt DATETIME2 DEFAULT GETUTCDATE()
-                        );
-                    END
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Admins')
+                BEGIN
+                    CREATE TABLE Admins (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        Username NVARCHAR(450) NOT NULL UNIQUE,
+                        PasswordHash NVARCHAR(MAX) NOT NULL,
+                        CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+                    )
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_apiclientid')
-                        CREATE INDEX idx_requestlogs_apiclientid ON RequestLogs(ApiClientId);
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_apiclientid')
+                BEGIN
+                    CREATE INDEX idx_requestlogs_apiclientid ON RequestLogs(ApiClientId)
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_paymentid')
-                        CREATE INDEX idx_requestlogs_paymentid ON RequestLogs(PaymentId);
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_requestlogs_paymentid')
+                BEGIN
+                    CREATE INDEX idx_requestlogs_paymentid ON RequestLogs(PaymentId)
+                END
 
-                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_payments_apiclientid')
-                        CREATE INDEX idx_payments_apiclientid ON Payments(ApiClientId);";
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_payments_apiclientid')
+                BEGIN
+                    CREATE INDEX idx_payments_apiclientid ON Payments(ApiClientId)
+                END
+                ";
 
             default:
                 throw new ArgumentException("Unsupported database provider");

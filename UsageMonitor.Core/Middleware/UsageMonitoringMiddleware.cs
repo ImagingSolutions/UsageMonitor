@@ -59,8 +59,7 @@ public class UsageMonitoringMiddlware
         {
             RequestTime = DateTime.UtcNow,
             Path = context.Request.Path,
-            Method = context.Request.Method,
-            ApiClientId = apiClient.Id
+            Method = context.Request.Method
         };
 
         _stopwatch.Start();

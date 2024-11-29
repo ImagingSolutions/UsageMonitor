@@ -9,6 +9,21 @@ namespace UsageMonitor.Core.Extensions;
 
 public static class UsageMonitorExtensions
 {
+    private static string GetPagesPath()
+    {
+        var assembly = typeof(UsageMonitorExtensions).Assembly;
+        var assemblyPath = Path.GetDirectoryName(assembly.Location);
+
+        // Try multiple possible locations
+        var possiblePaths = new[]
+        {
+            Path.Combine(assemblyPath!, "Pages"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages")
+        };
+
+        return possiblePaths.First(path => Directory.Exists(path));
+    }
+
     public static IEndpointRouteBuilder MapUsageMonitorEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/usgm");
@@ -38,7 +53,7 @@ public static class UsageMonitorExtensions
             IUsageMonitorService service,
             CreateNewClient clientData) =>
         {
-            var newClient =  await service.CreateApiClientAsync(clientData);
+            var newClient = await service.CreateApiClientAsync(clientData);
 
             return Results.Ok(newClient);
 
@@ -197,7 +212,7 @@ public static class UsageMonitorExtensions
             [FromQuery] DateTime? endDate,
             [FromQuery] bool detailed = false) =>
         {
-            var pdfBytes = detailed 
+            var pdfBytes = detailed
                 ? await reportService.GenerateClientUsageReportAsync(startDate, endDate, true)
                 : await reportService.GenerateUsageSummaryReportAsync(startDate, endDate);
 
@@ -212,10 +227,17 @@ public static class UsageMonitorExtensions
 
     public static IEndpointRouteBuilder MapUsageMonitorPages(this IEndpointRouteBuilder endpoints)
     {
+        var pagesPath = GetPagesPath();
 
         endpoints.MapGet("/usage", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "Usage.html");
+            var path = Path.Combine(pagesPath, "Usage.html");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Usage page not found. Please ensure the package is installed correctly.");
+                return;
+            }
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
 
@@ -228,27 +250,49 @@ public static class UsageMonitorExtensions
                 return;
             }
 
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "Admin.html");
+            var path = Path.Combine(pagesPath, "Admin.html");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Admin page not found. Please ensure the package is installed correctly.");
+                return;
+            }
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
 
         endpoints.MapGet("/login", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "Login.html");
+            var path = Path.Combine(pagesPath, "Login.html");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Login page not found. Please ensure the package is installed correctly.");
+                return;
+            }
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
 
         // CSS Files
         endpoints.MapGet("/css/core.css", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "css", "core.css");
+            var path = Path.Combine(pagesPath, "css", "core.css");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
             context.Response.ContentType = "text/css";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
 
         endpoints.MapGet("/css/theme.css", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "css", "theme.css");
+            var path = Path.Combine(pagesPath, "css", "theme.css");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
             context.Response.ContentType = "text/css";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
@@ -256,14 +300,24 @@ public static class UsageMonitorExtensions
         // JavaScript Files
         endpoints.MapGet("/js/chart.js", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "js", "chart.js");
+            var path = Path.Combine(pagesPath, "js", "chart.js");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
             context.Response.ContentType = "application/javascript";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
 
         endpoints.MapGet("/js/bootstrap.js", async context =>
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Pages", "js", "bootstrap.js");
+            var path = Path.Combine(pagesPath, "js", "bootstrap.js");
+            if (!File.Exists(path))
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
             context.Response.ContentType = "application/javascript";
             await context.Response.SendFileAsync(path);
         }).ExcludeFromDescription();
