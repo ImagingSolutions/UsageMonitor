@@ -12,9 +12,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddUsageMonitor(options =>
 {
-    options.ConnectionString = "Data Source= usagemonitor.db;";
-    // options.ConnectionString = "Data Source=localhost;Initial Catalog=UsageMonitorDBTest;TrustServerCertificate=True;Integrated Security=true;";
-    options.DatabaseProvider = DatabaseProvider.SQLite;
+    options.ConnectionString = "Data Source=localhost;Initial Catalog=UsageMonitorDBTest;TrustServerCertificate=True;Integrated Security=true;";
+    options.DatabaseProvider = DatabaseProvider.SQLServer;
 });
 
 var app = builder.Build();

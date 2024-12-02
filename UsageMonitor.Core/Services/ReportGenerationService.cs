@@ -60,13 +60,13 @@ public class ReportGenerationService : IReportGenerationService
     public async Task<byte[]> GenerateUsageSummaryReportAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         var client = await _usageMonitorService.GetApiClientAsync();
-        
+
         startDate ??= DateTime.UtcNow.AddMonths(-1);
         endDate ??= DateTime.UtcNow;
 
         var payments = await _usageMonitorService.GetAllPaymentStatsAsync();
         var periodPayments = payments.Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate);
-        
+
         QuestPDF.Settings.License = LicenseType.Community;
         return Document.Create(container =>
         {
@@ -118,7 +118,7 @@ public class ReportGenerationService : IReportGenerationService
         });
     }
 
-    private void ComposeContent(IContainer container, ApiClient client, IEnumerable<PaymentUsageStats> payments, 
+    private void ComposeContent(IContainer container, ApiClient client, IEnumerable<PaymentUsageStats> payments,
         List<DailyStats> dailyStats, IEnumerable<RequestLog> logs, DateTime startDate, DateTime endDate)
     {
         container.Column(column =>
@@ -209,7 +209,7 @@ public class ReportGenerationService : IReportGenerationService
         });
     }
 
-    private void ComposeSummaryContent(IContainer container, ApiClient client, 
+    private void ComposeSummaryContent(IContainer container, ApiClient client,
         IEnumerable<PaymentUsageStats> payments, DateTime startDate, DateTime endDate)
     {
         container.Column(column =>
