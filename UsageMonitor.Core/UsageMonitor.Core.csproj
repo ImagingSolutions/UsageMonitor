@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>UsageMonitor.Core</PackageId>
-    <Version>4.0.1</Version>
+    <Version>4.0.2</Version>
     <Authors>Manasseh</Authors>
     <Description>API usage monitoring, rate limiting, and analytics capabilities for ASP.NET Core
       applications</Description>
@@ -13,6 +13,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
     <PackageTags>api;monitoring;rate-limiting;analytics;aspnetcore</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,15 +41,43 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <!-- Include Pages folder content -->
+
   <ItemGroup>
+    <!-- Include Pages directory content -->
+    <Content Include="Pages\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>contentFiles\any\any\Pages</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+
+    <!-- Include CSS files -->
+    <Content Include="Pages\css\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>contentFiles\any\any\Pages\css</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+
+    <!-- Include JavaScript files -->
+    <Content Include="Pages\js\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>contentFiles\any\any\Pages\js</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Pages\**\*" />
+  </ItemGroup>
+
+  <!-- Include Pages folder content -->
+  <!-- <ItemGroup>
     <Content Include="Pages\**\*">
       <Pack>true</Pack>
       <PackagePath>Pages</PackagePath>
       <PackageCopyToOutput>true</PackageCopyToOutput>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
+  </ItemGroup> -->
 
   <!-- Ensure content files are copied -->
   <PropertyGroup>
