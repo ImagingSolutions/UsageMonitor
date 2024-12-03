@@ -56,6 +56,8 @@ public static class ServiceExtensions
 
         services.AddDirectoryBrowser();
 
+        services.AddHttpClient();
+
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>();

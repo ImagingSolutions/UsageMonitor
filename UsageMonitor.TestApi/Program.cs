@@ -14,6 +14,7 @@ builder.Services.AddUsageMonitor(options =>
 {
     options.ConnectionString = "Data Source=localhost;Initial Catalog=UsageMonitorDBTest;TrustServerCertificate=True;Integrated Security=true;";
     options.DatabaseProvider = DatabaseProvider.SQLServer;
+    options.BrandingImageUrl = "https://images.crunchbase.com/image/upload/c_pad,h_170,w_170,f_auto,b_white,q_auto:eco,dpr_1/v1502269844/tkozht1uupsomwt87cyr.png";
 });
 
 var app = builder.Build();
