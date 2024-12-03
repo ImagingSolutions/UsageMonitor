@@ -7,14 +7,14 @@ using UsageMonitor.Core.Services;
 
 namespace UsageMonitor.Core.Middleware;
 
-public class UsageMonitoringMiddlware
+public class UsageMonitoringMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IServiceProvider _serviceProvider;
     private readonly UsageMonitorOptions _options;
     private static readonly Stopwatch _stopwatch = new();
 
-    public UsageMonitoringMiddlware(
+    public UsageMonitoringMiddleware(
         RequestDelegate next,
         IServiceProvider serviceProvider,
         UsageMonitorOptions options)
@@ -22,6 +22,17 @@ public class UsageMonitoringMiddlware
         _next = next;
         _serviceProvider = serviceProvider;
         _options = options;
+    }
+
+    private bool IsBusinessException(Exception ex)
+    {
+        // // First check the predicate if provided
+        // if (_options.BusinessExceptionPredicate != null)
+        // {
+        //     return _options.BusinessExceptionPredicate(ex);
+        // }
+
+        return _options.BusinessExceptions.Any(e => e.GetType() == ex.GetType());
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -63,21 +74,35 @@ public class UsageMonitoringMiddlware
         };
 
         _stopwatch.Start();
+        var originalBodyStream = context.Response.Body;
 
         try
         {
+            using var memoryStream = new MemoryStream();
+            context.Response.Body = memoryStream;
+
             await _next(context);
+
+            memoryStream.Position = 0;
+            await memoryStream.CopyToAsync(originalBodyStream);
+
             log.StatusCode = context.Response.StatusCode;
         }
         catch (Exception ex)
         {
-            log.StatusCode = StatusCodes.Status500InternalServerError;
+            var isBusinessException = IsBusinessException(ex);
+
+            log.StatusCode = isBusinessException
+                ? StatusCodes.Status200OK
+                : StatusCodes.Status400BadRequest;
+
             throw;
         }
         finally
         {
             _stopwatch.Stop();
             log.Duration = _stopwatch.Elapsed.TotalSeconds;
+            context.Response.Body = originalBodyStream;
 
             await _usageService.LogRequestAsync(log);
             _stopwatch.Reset();

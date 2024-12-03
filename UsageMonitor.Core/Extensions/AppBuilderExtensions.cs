@@ -16,7 +16,7 @@ public static class AppBuilderExtensions
         app.UseStaticFiles();
         var options = app.ApplicationServices.GetRequiredService<UsageMonitorOptions>();
 
-        return app.UseMiddleware<UsageMonitoringMiddlware>(options);
+        return app.UseMiddleware<UsageMonitoringMiddleware>(options);
     }
 
 }
